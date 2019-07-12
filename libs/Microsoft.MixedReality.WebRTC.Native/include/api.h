@@ -32,16 +32,18 @@ using mrsResult = std::uint32_t;
 
 constexpr const mrsResult MRS_SUCCESS{0};
 
-// Unknown generic error
-constexpr const mrsResult MRS_E_UNKNOWN{0x80000000};
+// Generic errors (0x0xx)
+constexpr const mrsResult MRS_E_UNKNOWN{0x80000001};
+constexpr const mrsResult MRS_E_WRONG_THREAD{0x80000002};
+constexpr const mrsResult MRS_E_ARGUMENT{0x80000003};
 
-// Peer conection (0x0xx)
-constexpr const mrsResult MRS_E_INVALID_PEER_HANDLE{0x80000001};
-constexpr const mrsResult MRS_E_PEER_NOT_INITIALIZED{0x80000002};
+// Peer conection (0x1xx)
+constexpr const mrsResult MRS_E_INVALID_PEER_HANDLE{0x80000101};
+constexpr const mrsResult MRS_E_PEER_NOT_INITIALIZED{0x80000102};
 
-// Data (0x3xx)
-constexpr const mrsResult MRS_E_SCTP_NOT_NEGOTIATED{0x80000301};
-constexpr const mrsResult MRS_E_INVALID_DATA_CHANNEL_ID{0x80000302};
+// Data track (0x4xx)
+constexpr const mrsResult MRS_E_SCTP_NOT_NEGOTIATED{0x80000401};
+constexpr const mrsResult MRS_E_INVALID_DATA_CHANNEL_ID{0x80000402};
 
 //
 // Generic utilities
@@ -235,6 +237,15 @@ MRS_API void MRS_CALL mrsPeerConnectionRegisterARGBRemoteVideoFrameCallback(
     PeerConnectionARGBVideoFrameCallback callback,
     void* user_data) noexcept;
 
+struct mrsLocalVideoTrackSettings {
+  const char* video_device_id{};
+  uint32_t video_device_id_size = 0;
+  bool enable_mrc = true;
+  uint32_t max_width = 0;
+  uint32_t max_height = 0;
+  int max_fps = 0;
+};
+
 /// Add a local video track from a local video capture device (webcam) to
 /// the collection of tracks to send to the remote peer.
 /// |video_device_id| specifies the unique identifier of a video capture
@@ -243,10 +254,9 @@ MRS_API void MRS_CALL mrsPeerConnectionRegisterARGBRemoteVideoFrameCallback(
 /// |enable_mrc| allows enabling Mixed Reality Capture on HoloLens devices, and
 /// is otherwise ignored for other video capture devices. On UWP this must be
 /// invoked from another thread than the main UI thread.
-MRS_API bool MRS_CALL mrsPeerConnectionAddLocalVideoTrack(
+MRS_API mrsResult MRS_CALL mrsPeerConnectionAddLocalVideoTrack(
     PeerConnectionHandle peerHandle,
-    const char* video_device_id,
-    bool enable_mrc) noexcept(kNoExceptFalseOnUWP);
+    mrsLocalVideoTrackSettings settings) noexcept;
 
 /// Add a local audio track from a local audio capture device (microphone) to
 /// the collection of tracks to send to the remote peer.

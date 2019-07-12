@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-[assembly:InternalsVisibleTo("Microsoft.MixedReality.WebRTC.Tests")]
+[assembly: InternalsVisibleTo("Microsoft.MixedReality.WebRTC.Tests")]
 
 namespace Microsoft.MixedReality.WebRTC
 {
@@ -430,26 +430,26 @@ namespace Microsoft.MixedReality.WebRTC
         {
             switch (message.MessageType)
             {
-            case SignalerMessage.WireMessageType.Offer:
-                SetRemoteDescription("offer", message.Data);
-                // If we get an offer, we immediately send an answer back
-                CreateAnswer();
-                break;
+                case SignalerMessage.WireMessageType.Offer:
+                    SetRemoteDescription("offer", message.Data);
+                    // If we get an offer, we immediately send an answer back
+                    CreateAnswer();
+                    break;
 
-            case SignalerMessage.WireMessageType.Answer:
-                SetRemoteDescription("answer", message.Data);
-                break;
+                case SignalerMessage.WireMessageType.Answer:
+                    SetRemoteDescription("answer", message.Data);
+                    break;
 
-            case SignalerMessage.WireMessageType.Ice:
-                // TODO - This is NodeDSS-specific
-                // this "parts" protocol is defined above, in OnIceCandiateReadyToSend listener
-                var parts = message.Data.Split(new string[] { message.IceDataSeparator }, StringSplitOptions.RemoveEmptyEntries);
-                // Note the inverted arguments; candidate is last here, but first in OnIceCandiateReadyToSend
-                AddIceCandidate(parts[2], int.Parse(parts[1]), parts[0]);
-                break;
+                case SignalerMessage.WireMessageType.Ice:
+                    // TODO - This is NodeDSS-specific
+                    // this "parts" protocol is defined above, in OnIceCandiateReadyToSend listener
+                    var parts = message.Data.Split(new string[] { message.IceDataSeparator }, StringSplitOptions.RemoveEmptyEntries);
+                    // Note the inverted arguments; candidate is last here, but first in OnIceCandiateReadyToSend
+                    AddIceCandidate(parts[2], int.Parse(parts[1]), parts[0]);
+                    break;
 
-            default:
-                throw new InvalidOperationException($"Unhandled signaler message type '{message.MessageType}'");
+                default:
+                    throw new InvalidOperationException($"Unhandled signaler message type '{message.MessageType}'");
             }
         }
 
@@ -674,17 +674,24 @@ namespace Microsoft.MixedReality.WebRTC
         /// for more details.
         /// </remarks>
         /// <exception cref="InvalidOperationException">The peer connection is not intialized.</exception>
-        public Task AddLocalVideoTrackAsync(VideoCaptureDevice device = default(VideoCaptureDevice), bool enableMrc = false)
+        public Task AddLocalVideoTrackAsync(LocalVideoTrackSettings settings = default)
         {
             ThrowIfConnectionNotOpen();
+            // On UWP this cannot be called from the main UI thread, so always call it from
+            // a background worker thread.
             return Task.Run(() =>
             {
-                // On UWP this cannot be called from the main UI thread, so always call it from
-                // a background worker thread.
-                if (!NativeMethods.PeerConnectionAddLocalVideoTrack(_nativePeerhandle, device.id, enableMrc))
+                var nativeSettings = (settings != null) ? new NativeMethods.LocalVideoTrackSettings()
                 {
-                    throw new Exception();
-                }
+                    videoDeviceId = settings.videoDevice.id,
+                    videoDeviceIdSize = settings.videoDevice.id != null ? (uint)settings.videoDevice.id.Length : 0,
+                    enableMrc = settings.enableMrc,
+                    maxWidth = settings.maxWidth.GetValueOrDefault(0),
+                    maxHeight = settings.maxHeight.GetValueOrDefault(0),
+                    maxFps = settings.maxFps.GetValueOrDefault(0),
+                } : new NativeMethods.LocalVideoTrackSettings();
+                uint ret = NativeMethods.PeerConnectionAddLocalVideoTrack(_nativePeerhandle, nativeSettings);
+                ThrowOnErrorCode(ret);
             });
         }
 
@@ -835,11 +842,11 @@ namespace Microsoft.MixedReality.WebRTC
                     return dataChannel;
                 }
                 handle.Free();
-                if (res == 0x80000301) // MRS_E_SCTP_NOT_NEGOTIATED
+                if (res == 0x80000401) // MRS_E_SCTP_NOT_NEGOTIATED
                 {
                     throw new InvalidOperationException("Cannot add a first data channel after the connection handshake started. Call AddDataChannelAsync() before calling CreateOffer().");
                 }
-                if (res == 0x80000302) // MRS_E_INVALID_DATA_CHANNEL_ID
+                if (res == 0x80000402) // MRS_E_INVALID_DATA_CHANNEL_ID
                 {
                     throw new ArgumentOutOfRangeException("id", id, "Invalid ID passed to AddDataChannelAsync().");
                 }
@@ -1071,9 +1078,20 @@ namespace Microsoft.MixedReality.WebRTC
             public static extern void PeerConnectionRegisterARGBRemoteVideoFrameCallback(IntPtr peerHandle,
                 PeerConnectionARGBVideoFrameCallback callback, IntPtr userData);
 
+            [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+            public ref struct LocalVideoTrackSettings
+            {
+                public string videoDeviceId;
+                public uint videoDeviceIdSize;
+                public bool enableMrc;
+                public uint maxWidth;
+                public uint maxHeight;
+                public int maxFps;
+            }
+
             [DllImport(dllPath, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
                 EntryPoint = "mrsPeerConnectionAddLocalVideoTrack")]
-            public static extern bool PeerConnectionAddLocalVideoTrack(IntPtr peerHandle, string videoDeviceId, bool enableMrc);
+            public static extern uint PeerConnectionAddLocalVideoTrack(IntPtr peerHandle, LocalVideoTrackSettings settings);
 
             [DllImport(dllPath, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
                 EntryPoint = "mrsPeerConnectionAddLocalAudioTrack")]
@@ -1155,6 +1173,15 @@ namespace Microsoft.MixedReality.WebRTC
             /// Friendly device name.
             /// </summary>
             public string name;
+        }
+
+        public class LocalVideoTrackSettings
+        {
+            public VideoCaptureDevice videoDevice = default;
+            public bool enableMrc = true;
+            public uint? maxWidth;
+            public uint? maxHeight;
+            public int? maxFps;
         }
 
         private SignalerMessage.WireMessageType MessageTypeFromString(string type)
@@ -1289,5 +1316,40 @@ namespace Microsoft.MixedReality.WebRTC
         /// <param name="elem_count">Total number of rows to copy.</param>
         [DllImport(NativeMethods.dllPath, CallingConvention = CallingConvention.StdCall, EntryPoint = "mrsMemCpyStride")]
         public static unsafe extern void MemCpyStride(void* dst, int dst_stride, void* src, int src_stride, int elem_size, int elem_count);
+
+        /// <summary>
+        /// Helper to throw an exception based on an error code.
+        /// </summary>
+        /// <param name="res">The error code to turn into an exception, if not zero (MRS_SUCCESS).</param>
+        private void ThrowOnErrorCode(uint res)
+        {
+            switch (res)
+            {
+                case 0: // MRS_SUCCESS
+                    return;
+
+                case 0x80000001: // MRS_E_UNKNOWN
+                default:
+                    throw new Exception();
+
+                case 0x80000002: // MRS_E_WRONG_THREAD
+                    throw new InvalidOperationException("This method cannot be called on that thread.");
+
+                case 0x80000003: // MRS_E_ARGUMENT
+                    throw new ArgumentException();
+
+                case 0x80000101: // MRS_E_INVALID_PEER_HANDLE
+                    throw new InvalidOperationException("Invalid peer connection handle.");
+
+                case 0x80000102: // MRS_E_PEER_NOT_INITIALIZED
+                    throw new Exception("Peer connection not initialized.");
+
+                case 0x80000401: // MRS_E_SCTP_NOT_NEGOTIATED
+                    throw new Exception("SCTP not negotiated");
+
+                case 0x80000402: // MRS_E_INVALID_DATA_CHANNEL_ID
+                    throw new ArgumentException("Invalid data channel identifier");
+            }
+        }
     }
 }

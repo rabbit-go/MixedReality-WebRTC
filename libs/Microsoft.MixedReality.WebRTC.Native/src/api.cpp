@@ -51,18 +51,16 @@ const std::string kLocalVideoLabel("local_video");
 const std::string kLocalAudioLabel("local_audio");
 
 /// Helper to open a video capture device.
-std::unique_ptr<cricket::VideoCapturer> OpenVideoCaptureDevice(
-    const char* video_device_id,
-    bool enable_mrc = false) noexcept(kNoExceptFalseOnUWP) {
+mrsResult OpenVideoCaptureDevice(
+    const mrsLocalVideoTrackSettings& settings,
+    std::unique_ptr<cricket::VideoCapturer>& capturer_out) noexcept {
 #if defined(WINUWP)
   // Check for calls from main UI thread; this is not supported (will deadlock)
   auto mw = winrt::Windows::ApplicationModel::Core::CoreApplication::MainView();
   auto cw = mw.CoreWindow();
   auto dispatcher = cw.Dispatcher();
   if (dispatcher.HasThreadAccess()) {
-    throw winrt::hresult_wrong_thread(
-        winrt::to_hstring(L"Cannot open the WebRTC video capture device from "
-                          L"the UI thread on UWP."));
+    return MRS_E_WRONG_THREAD;
   }
 
   // Get devices synchronously (wait for UI thread to retrieve them for us)
@@ -72,17 +70,17 @@ std::unique_ptr<cricket::VideoCapturer> OpenVideoCaptureDevice(
   blockOnDevicesEvent.Wait(rtc::Event::kForever);
   auto deviceList = vci->value();
 
-  std::wstring video_device_id_str;
-  if ((video_device_id != nullptr) && (video_device_id[0] != '\0')) {
-    video_device_id_str =
-        rtc::ToUtf16(video_device_id, strlen(video_device_id));
+  std::wstring video_device_id;
+  if (settings.video_device_id && (settings.video_device_id_size > 0)) {
+    video_device_id =
+        rtc::ToUtf16(settings.video_device_id, settings.video_device_id_size);
   }
 
   for (auto&& vdi : *deviceList) {
     auto devInfo =
         wrapper::impl::org::webRtc::VideoDeviceInfo::toNative_winrt(vdi);
     auto name = devInfo.Name().c_str();
-    if (!video_device_id_str.empty() && (video_device_id_str != name)) {
+    if (!video_device_id.empty() && (video_device_id != name)) {
       continue;
     }
     auto id = devInfo.Id().c_str();
@@ -92,7 +90,7 @@ std::unique_ptr<cricket::VideoCapturer> OpenVideoCaptureDevice(
     createParams->factory = g_winuwp_factory;
     createParams->name = name;
     createParams->id = id;
-    createParams->enableMrc = enable_mrc;
+    createParams->enableMrc = settings.enable_mrc;
 
     auto vcd = wrapper::impl::org::webRtc::VideoCapturer::create(createParams);
 
@@ -111,33 +109,37 @@ std::unique_ptr<cricket::VideoCapturer> OpenVideoCaptureDevice(
         }
       }
 
-      return nativeVcd;
+      capturer_out = std::move(nativeVcd);
+      return MRS_SUCCESS;
     }
   }
-  return nullptr;
+
 #else
-  (void)enable_mrc;  // No MRC on non-UWP
+
+  // List video capture devices, match by name if specified, or use first one
+  // available otherwise.
   std::vector<std::string> device_names;
   {
     std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(
         webrtc::VideoCaptureFactory::CreateDeviceInfo());
     if (!info) {
-      return nullptr;
+      return MRS_E_UNKNOWN;
     }
 
-    std::string video_device_id_str;
-    if ((video_device_id != nullptr) && (video_device_id[0] != '\0')) {
-      video_device_id_str.assign(video_device_id);
+    std::string video_device_id;
+    if (settings.video_device_id && (settings.video_device_id_size > 0)) {
+      video_device_id.assign(settings.video_device_id,
+                             settings.video_device_id_size);
     }
 
-    int num_devices = info->NumberOfDevices();
+    const int num_devices = info->NumberOfDevices();
     for (int i = 0; i < num_devices; ++i) {
       constexpr uint32_t kSize = 256;
-      char name[kSize] = {0};
-      char id[kSize] = {0};
+      char name[kSize] = {};
+      char id[kSize] = {};
       if (info->GetDeviceName(i, name, kSize, id, kSize) != -1) {
         device_names.push_back(name);
-        if (video_device_id_str == name) {
+        if (video_device_id == name) {
           break;
         }
       }
@@ -145,25 +147,30 @@ std::unique_ptr<cricket::VideoCapturer> OpenVideoCaptureDevice(
   }
 
   cricket::WebRtcVideoDeviceCapturerFactory factory;
-  std::unique_ptr<cricket::VideoCapturer> capturer;
   for (const auto& name : device_names) {
-    capturer = factory.Create(cricket::Device(name, 0));
-    if (capturer) {
-      break;
+    capturer_out = factory.Create(cricket::Device(name, 0));
+    if (capturer_out) {
+      return MRS_SUCCESS;
     }
   }
-  return capturer;
+
 #endif
+
+  return MRS_E_UNKNOWN;
 }
 
 }  // namespace
 
 #if defined(WINUWP)
-rtc::Thread* UnsafeGetWorkerThread() {
+inline rtc::Thread* GetWorkerThread() {
   if (auto* ptr = g_winuwp_factory.get()) {
     return ptr->workerThread.get();
   }
   return nullptr;
+}
+#else
+inline rtc::Thread* GetWorkerThread() {
+  return g_worker_thread.get();
 }
 #endif
 
@@ -425,62 +432,74 @@ void MRS_CALL mrsPeerConnectionRegisterARGBRemoteVideoFrameCallback(
   }
 }
 
-bool MRS_CALL
-mrsPeerConnectionAddLocalVideoTrack(PeerConnectionHandle peerHandle,
-                                    const char* video_device_id,
-                                    bool enable_mrc)
-#if defined(WINUWP)
-    noexcept(false)
-#else
-    noexcept(true)
-#endif
-{
-  if (auto peer = static_cast<PeerConnection*>(peerHandle)) {
-    if (!g_peer_connection_factory) {
-      return false;
-    }
-    std::unique_ptr<cricket::VideoCapturer> video_capturer =
-        OpenVideoCaptureDevice(video_device_id, enable_mrc);
-    if (!video_capturer) {
-      return false;
-    }
-
-    //// HACK - Force max size to prevent high-res HoloLens 2 camera, which also
-    /// disables MRC /
-    /// https://docs.microsoft.com/en-us/windows/mixed-reality/mixed-reality-capture-for-developers#enabling-mrc-in-your-app
-    //// "MRC on HoloLens 2 supports videos up to 1080p and photos up to 4K
-    /// resolution"
-    // cricket::VideoFormat max_format{};
-    // max_format.width = 1920;
-    // max_format.height = 1080;
-    // max_format.interval = cricket::VideoFormat::FpsToInterval(30);
-    // video_capturer->set_enable_camera_list(
-    //    true);  //< needed to enable filtering
-    // video_capturer->ConstrainSupportedFormats(max_format);
-
-    //#if defined(WINUWP)
-    //    //MediaConstraints videoConstraints = new MediaConstraints();
-    //    //new wrapper::impl::org::webRtc::MediaConstraints(mandatory,
-    //    optional); auto ptr =
-    //    wrapper::org::webRtc::MediaConstraints::wrapper_create();
-    //    ptr->get_mandatory()->emplace_back(new
-    //    wrapper::org::webRtc::Constraint());
-    //#endif
-
-    rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source =
-        g_peer_connection_factory->CreateVideoSource(std::move(video_capturer));
-    if (!video_source) {
-      return false;
-    }
-    rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track =
-        g_peer_connection_factory->CreateVideoTrack(kLocalVideoLabel,
-                                                    video_source);
-    if (!video_track) {
-      return false;
-    }
-    return peer->AddLocalVideoTrack(std::move(video_track));
+mrsResult MRS_CALL mrsPeerConnectionAddLocalVideoTrack(
+    PeerConnectionHandle peerHandle,
+    mrsLocalVideoTrackSettings settings) noexcept {
+  auto peer = static_cast<PeerConnection*>(peerHandle);
+  if (!peer) {
+    return MRS_E_INVALID_PEER_HANDLE;
   }
-  return false;
+  if (!g_peer_connection_factory) {
+    return MRS_E_INVALID_PEER_HANDLE;
+  }
+
+  // Open the video capture device
+  std::unique_ptr<cricket::VideoCapturer> video_capturer;
+  auto res = OpenVideoCaptureDevice(settings, video_capturer);
+  if (res != MRS_SUCCESS) {
+    return res;
+  }
+  RTC_CHECK(video_capturer.get());
+
+  //< TODO - Use MediaConstraintsInterface instead of cricket::VideoFormat,
+  //< because the later doesn't support FPS constraints and only max
+  //< width/height.
+
+  //// Set width/height/FPS constraints if any
+  // if (settings.max_width || settings.max_height || (settings.max_fps > 0)) {
+  //  //#if defined(WINUWP)
+  //  //      MediaConstraints videoConstraints = new MediaConstraints();
+  //  //      new wrapper::impl::org::webRtc::MediaConstraints(mandatory,
+  //  //      optional); auto ptr =
+  //  //      wrapper::org::webRtc::MediaConstraints::wrapper_create();
+  //  //      ptr->get_mandatory()->emplace_back(
+  //  //          new wrapper::org::webRtc::Constraint());
+  //  //#else
+  //  cricket::VideoFormat max_format{};
+  //  constexpr const int UNLIMITED = std::numeric_limits<int>::max();
+  //  max_format.width = (settings.max_width ? settings.max_width : UNLIMITED);
+  //  max_format.height = (settings.max_height ? settings.max_height :
+  //  UNLIMITED); max_format.interval = cricket::VideoFormat::FpsToInterval(
+  //      settings.max_fps ? settings.max_fps : 30);
+
+  //  // VideoCapturerTrackSource::Initialize() calls the VideoCapturer methods
+  //  on
+  //  // the worker thread, and the VideoCapturer checks that all its methods
+  //  are
+  //  // called on the same thread, so force those calls on the worker thread
+  //  too. GetWorkerThread()->Invoke<void>(
+  //      RTC_FROM_HERE, [ptr = video_capturer.get(), &max_format]() {
+  //        ptr->set_enable_camera_list(true);  //< needed to enable filtering
+  //        ptr->ConstrainSupportedFormats(max_format);
+  //      });
+  //  //#endif
+  //}
+
+  rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source =
+      g_peer_connection_factory->CreateVideoSource(std::move(video_capturer));
+  if (!video_source) {
+    return MRS_E_UNKNOWN;
+  }
+  rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track =
+      g_peer_connection_factory->CreateVideoTrack(kLocalVideoLabel,
+                                                  video_source);
+  if (!video_track) {
+    return MRS_E_UNKNOWN;
+  }
+  if (peer->AddLocalVideoTrack(std::move(video_track))) {
+    return MRS_SUCCESS;
+  }
+  return MRS_E_UNKNOWN;
 }
 
 bool MRS_CALL
@@ -520,11 +539,15 @@ mrsResult MRS_CALL mrsPeerConnectionAddDataChannel(
 
 {
   if (auto peer = static_cast<PeerConnection*>(peerHandle)) {
-    return peer->AddDataChannel(
-        id, label, ordered, reliable,
-        DataChannelMessageCallback{message_callback, message_user_data},
-        DataChannelBufferingCallback{buffering_callback, buffering_user_data},
-        DataChannelStateCallback{state_callback, state_user_data});
+    if (peer->AddDataChannel(
+            id, label, ordered, reliable,
+            DataChannelMessageCallback{message_callback, message_user_data},
+            DataChannelBufferingCallback{buffering_callback,
+                                         buffering_user_data},
+            DataChannelStateCallback{state_callback, state_user_data})) {
+      return MRS_SUCCESS;
+    }
+    return MRS_E_UNKNOWN;
   }
   return MRS_E_INVALID_PEER_HANDLE;
 }
