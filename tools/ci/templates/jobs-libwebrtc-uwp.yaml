@@ -14,10 +14,7 @@ jobs:
 # Compile webrtc.lib (core Google implementation)
 - job: libwebrtc_UWP_${{parameters.buildArch}}_${{parameters.buildConfig}}
   timeoutInMinutes: 360
-  pool:
-    name: ${{parameters.buildAgent}}
-    demands:
-    - msbuild
+  pool: '${{parameters.buildAgent}}'
   variables:
     buildTriple: UWP-${{parameters.buildArch}}-${{parameters.buildConfig}}
     projectRoot: 'external/webrtc-uwp-sdk/webrtc/windows/projects/msvc/'
