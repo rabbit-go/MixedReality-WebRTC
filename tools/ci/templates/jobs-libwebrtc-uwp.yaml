@@ -18,7 +18,6 @@ jobs:
     name: ${{parameters.buildAgent}}
     demands:
     - msbuild
-    - mr_webrtc_core
   variables:
     buildTriple: UWP-${{parameters.buildArch}}-${{parameters.buildConfig}}
     projectRoot: 'external/webrtc-uwp-sdk/webrtc/windows/projects/msvc/'
