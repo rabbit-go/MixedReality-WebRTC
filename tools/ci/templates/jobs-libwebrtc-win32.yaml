@@ -45,11 +45,13 @@ jobs:
         else
         {
           Write-Host "##vso[task.logissue type=error]Cannot find pip from C:\\Python27\\Scripts."
+          exit 1
         }
       }
       else
       {
         Write-Host "##vso[task.logissue type=error]Cannot find python 2.7 from C:\\Python27."
+        exit 1
       }
     env:
       BUILD_ARCH: ${{parameters.buildArch}}
