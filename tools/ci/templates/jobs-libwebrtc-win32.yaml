@@ -36,7 +36,7 @@ jobs:
       $Python27 = "C:\\Python27\\python.exe"
       if (Test-Path "$Python27")
       {
-        $env:PATH="C:\\Python27;$env:PATH"
+        $env:PATH="C:\\Python27;C:\\Python27\\Scripts;$env:PATH"
         Invoke-Expression "$Python27 external/webrtc-uwp-sdk/scripts/run.py -a prepare build -t webrtc -p win --cpus $env::BUILD_ARCH -c $env:BUILD_CONFIG --noColor --noWrapper --cpp17"
       }
       else
