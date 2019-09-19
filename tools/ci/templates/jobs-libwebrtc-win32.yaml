@@ -30,15 +30,32 @@ jobs:
       arguments: 'Win32 ${{parameters.buildArch}} ${{parameters.buildConfig}}'
 
   # Compile webrtc.lib
-  - task: MSBuild@1
-    displayName: 'Build webrtc.lib ($(buildTriple))'
-    inputs:
-      solution: '$(projectRoot)WebRtc.Win32.Native.Builder/WebRtc.Win32.Native.Builder.vcxproj'
-      msbuildVersion: '15.0'
-      msbuildArchitecture: x64
-      platform: ${{parameters.buildArch}}
-      configuration: ${{parameters.buildConfig}}
+  - powershell: |
+      Write-Host "Building webrtc.lib for $env:BUILD_TRIPLE..."
+      # Force Python 2.7
+      $Python27 = "C:\\Python27\\python.exe"
+      if (Test-Path "$Python27")
+      {
+        $env:PATH="C:\\Python27;$env:PATH"
+        "$Python27" external/webrtc-uwp-sdk/scripts/run.py -a prepare build -t webrtc -p win --cpus $env::BUILD_ARCH -c $env:BUILD_CONFIG --noColor --noWrapper --cpp17
+      }
+      else
+      {
+        Write-Host "##vso[task.logissue type=error]Cannot find python 2.7 from $Python27."
+      }
+    env:
+      BUILD_ARCH: ${{parameters.buildArch}}
+      BUILD_CONFIG: ${{parameters.buildConfig}}
     timeoutInMinutes: 120
+  # - task: MSBuild@1
+  #   displayName: 'Build webrtc.lib ($(buildTriple))'
+  #   inputs:
+  #     solution: '$(projectRoot)WebRtc.Win32.Native.Builder/WebRtc.Win32.Native.Builder.vcxproj'
+  #     msbuildVersion: '15.0'
+  #     msbuildArchitecture: x64
+  #     platform: ${{parameters.buildArch}}
+  #     configuration: ${{parameters.buildConfig}}
+  #   timeoutInMinutes: 120
 
   # Publish webrtc.lib
   - task: PublishPipelineArtifact@0
