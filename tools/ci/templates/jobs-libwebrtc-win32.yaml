@@ -33,15 +33,23 @@ jobs:
   - powershell: |
       Write-Host "Building webrtc.lib for $env:BUILD_TRIPLE..."
       # Force Python 2.7
-      $Python27 = "C:\\Python27\\python.exe"
-      if (Test-Path "$Python27")
+      if (Test-Path "C:\\Python27\\python.exe")
       {
-        $env:PATH="C:\\Python27;C:\\Python27\\Scripts;$env:PATH"
-        Invoke-Expression "$Python27 external/webrtc-uwp-sdk/scripts/run.py -a prepare build -t webrtc -p win --cpus $env::BUILD_ARCH -c $env:BUILD_CONFIG --noColor --noWrapper --cpp17"
+        if (Test-Path "C:\\Python27\\Scripts\\pip.exe")
+        {
+          $env:PATH="C:\\Python27;C:\\Python27\\Scripts;$env:PATH"
+          python -m pip install --upgrade pip
+          pip install pywin32
+          python external/webrtc-uwp-sdk/scripts/run.py -a prepare build -t webrtc -p win --cpus $env::BUILD_ARCH -c $env:BUILD_CONFIG --noColor --noWrapper --cpp17
+        }
+        else
+        {
+          Write-Host "##vso[task.logissue type=error]Cannot find pip from C:\\Python27\\Scripts."
+        }
       }
       else
       {
-        Write-Host "##vso[task.logissue type=error]Cannot find python 2.7 from $Python27."
+        Write-Host "##vso[task.logissue type=error]Cannot find python 2.7 from C:\\Python27."
       }
     env:
       BUILD_ARCH: ${{parameters.buildArch}}
