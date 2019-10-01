@@ -971,8 +971,12 @@ MRS_API void MRS_CALL mrsPeerConnectionRegisterRemoteAudioFrameCallback(
 
 mrsResult MRS_CALL mrsPeerConnectionAddLocalVideoTrack(
     PeerConnectionHandle peerHandle,
+    const char* track_name,
     VideoDeviceConfiguration config,
     LocalVideoTrackHandle* trackHandle) noexcept {
+  if (!track_name || (track_name[0] == '\0')) {
+    return MRS_E_INVALID_PARAMETER;
+  }
   if (!trackHandle) {
     return MRS_E_INVALID_PARAMETER;
   }
@@ -1023,7 +1027,7 @@ mrsResult MRS_CALL mrsPeerConnectionAddLocalVideoTrack(
     return MRS_E_UNKNOWN;
   }
   rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track =
-      pc_factory->CreateVideoTrack(kLocalVideoLabel, video_source);
+      pc_factory->CreateVideoTrack(track_name, video_source);
   if (!video_track) {
     return MRS_E_UNKNOWN;
   }
@@ -1040,11 +1044,12 @@ mrsResult MRS_CALL mrsPeerConnectionAddLocalVideoTrackFromExternalI420Source(
     const char* track_name,
     mrsRequestExternalI420VideoFrameCallback callback,
     void* user_data,
-    ExternalVideoTrackSourceHandle* handle) noexcept {
-  if (!handle) {
+    ExternalVideoTrackSourceHandle* source_handle,
+    LocalVideoTrackHandle* track_handle) noexcept {
+  if (!source_handle) {
     return MRS_E_INVALID_PARAMETER;
   }
-  *handle = nullptr;
+  *source_handle = nullptr;
   auto peer = static_cast<PeerConnection*>(peerHandle);
   if (!peer) {
     return MRS_E_INVALID_PEER_HANDLE;
@@ -1059,6 +1064,7 @@ mrsResult MRS_CALL mrsPeerConnectionAddLocalVideoTrackFromExternalI420Source(
   if (!video_source) {
     return MRS_E_UNKNOWN;
   }
+  RTC_CHECK(false);  //< TODO - who is keeping the video_source alive????
   std::string track_name_str;
   if (track_name && (track_name[0] != '\0')) {
     track_name_str = track_name;
@@ -1072,8 +1078,8 @@ mrsResult MRS_CALL mrsPeerConnectionAddLocalVideoTrackFromExternalI420Source(
   }
   auto result = peer->AddLocalVideoTrack(std::move(video_track));
   if (result.ok()) {
-    *handle = video_source.get();
-    //*trackHandle = result.value().get(); //< TODO
+    *source_handle = video_source.get();
+    *track_handle = result.value().get();
     return MRS_SUCCESS;
   }
   RTC_LOG(LS_ERROR) << "Failed to add local video track: "
@@ -1086,11 +1092,12 @@ mrsResult MRS_CALL mrsPeerConnectionAddLocalVideoTrackFromExternalArgb32Source(
     const char* track_name,
     mrsRequestExternalArgb32VideoFrameCallback callback,
     void* user_data,
-    ExternalVideoTrackSourceHandle* handle) noexcept {
-  if (!handle) {
+    ExternalVideoTrackSourceHandle* source_handle,
+    LocalVideoTrackHandle* track_handle) noexcept {
+  if (!source_handle) {
     return MRS_E_INVALID_PARAMETER;
   }
-  *handle = nullptr;
+  *source_handle = nullptr;
   auto peer = static_cast<PeerConnection*>(peerHandle);
   if (!peer) {
     return MRS_E_INVALID_PEER_HANDLE;
@@ -1105,6 +1112,7 @@ mrsResult MRS_CALL mrsPeerConnectionAddLocalVideoTrackFromExternalArgb32Source(
   if (!video_source) {
     return MRS_E_UNKNOWN;
   }
+  RTC_CHECK(false);//< TODO - who is keeping the video_source alive????
   std::string track_name_str;
   if (track_name && (track_name[0] != '\0')) {
     track_name_str = track_name;
@@ -1118,8 +1126,8 @@ mrsResult MRS_CALL mrsPeerConnectionAddLocalVideoTrackFromExternalArgb32Source(
   }
   auto result = peer->AddLocalVideoTrack(std::move(video_track));
   if (result.ok()) {
-    *handle = video_source.get();
-    //*trackHandle = result.value().get(); //< TODO
+    *source_handle = video_source.get();
+    *track_handle = result.value().get();
     return MRS_SUCCESS;
   }
   RTC_LOG(LS_ERROR) << "Failed to add local video track: "
@@ -1237,7 +1245,7 @@ mrsResult MRS_CALL mrsPeerConnectionRemoveLocalVideoTrack(
   if (!peer) {
     return MRS_E_INVALID_PEER_HANDLE;
   }
-  auto track = static_cast<LocalVideoTrackHandle*>(trackHandle);
+  auto track = static_cast<LocalVideoTrack*>(trackHandle);
   if (!track) {
     return MRS_E_INVALID_PARAMETER;
   }
@@ -1268,43 +1276,43 @@ mrsResult MRS_CALL mrsPeerConnectionRemoveDataChannel(
 }
 
 mrsResult MRS_CALL
-mrsPeerConnectionSetLocalVideoTrackEnabled(PeerConnectionHandle peerHandle,
-                                           int32_t enabled) noexcept {
-  auto peer = static_cast<PeerConnection*>(peerHandle);
-  if (!peer) {
-    return MRS_E_INVALID_PEER_HANDLE;
+mrsLocalVideoTrackSetEnabled(LocalVideoTrackHandle track_handle,
+                             mrsBool enabled) noexcept {
+  auto track = static_cast<LocalVideoTrack*>(track_handle);
+  if (!track) {
+    return MRS_E_INVALID_PARAMETER;
   }
-  peer->SetLocalVideoTrackEnabled(enabled != 0);
+  track->SetEnabled(enabled != mrsBool::kFalse);
   return MRS_SUCCESS;
 }
 
-int32_t MRS_CALL mrsPeerConnectionIsLocalVideoTrackEnabled(
-    PeerConnectionHandle peerHandle) noexcept {
-  auto peer = static_cast<PeerConnection*>(peerHandle);
-  if (!peer) {
-    return false;
+mrsBool MRS_CALL
+mrsLocalVideoTrackIsEnabled(LocalVideoTrackHandle track_handle) noexcept {
+  auto track = static_cast<LocalVideoTrack*>(track_handle);
+  if (!track) {
+    return mrsBool::kFalse;
   }
-  return peer->IsLocalVideoTrackEnabled();
+  return (track->IsEnabled() ? mrsBool::kTrue : mrsBool::kFalse);
 }
 
 mrsResult MRS_CALL
 mrsPeerConnectionSetLocalAudioTrackEnabled(PeerConnectionHandle peerHandle,
-                                           int32_t enabled) noexcept {
+                                           mrsBool enabled) noexcept {
   auto peer = static_cast<PeerConnection*>(peerHandle);
   if (!peer) {
     return MRS_E_INVALID_PEER_HANDLE;
   }
-  peer->SetLocalAudioTrackEnabled(enabled != 0);
+  peer->SetLocalAudioTrackEnabled(enabled != mrsBool::kFalse);
   return MRS_SUCCESS;
 }
 
-int32_t MRS_CALL mrsPeerConnectionIsLocalAudioTrackEnabled(
+mrsBool MRS_CALL mrsPeerConnectionIsLocalAudioTrackEnabled(
     PeerConnectionHandle peerHandle) noexcept {
   auto peer = static_cast<PeerConnection*>(peerHandle);
   if (!peer) {
-    return false;
+    return mrsBool::kFalse;
   }
-  return peer->IsLocalAudioTrackEnabled();
+  return (peer->IsLocalAudioTrackEnabled() ? mrsBool::kTrue : mrsBool::kFalse);
 }
 
 mrsResult MRS_CALL
