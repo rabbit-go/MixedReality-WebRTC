@@ -507,7 +507,7 @@ struct VideoDeviceConfiguration {
 /// invoked from another thread than the main UI thread.
 MRS_API mrsResult MRS_CALL mrsPeerConnectionAddLocalVideoTrack(
     PeerConnectionHandle peerHandle,
-	const char* track_name,
+    const char* track_name,
     VideoDeviceConfiguration config,
     LocalVideoTrackHandle* trackHandle) noexcept;
 
@@ -550,10 +550,17 @@ mrsPeerConnectionAddLocalVideoTrackFromExternalArgb32Source(
     LocalVideoTrackHandle* track_handle) noexcept;
 
 /// Remove a local video track from the given peer connection and destroy it.
+/// After this call returned, the video track handle is invalid.
+MRS_API mrsResult MRS_CALL mrsPeerConnectionRemoveLocalVideoTrack(
+    PeerConnectionHandle peer_handle,
+    LocalVideoTrackHandle track_handle) noexcept;
+
+/// Remove all local video tracks backed by the given video track source from
+/// the given peer connection and destroy the video track source.
 /// After this call returned, the video track source handle is invalid.
-MRS_API mrsResult MRS_CALL mrsPeerConnectionRemoveLocalVideoTracks(
-    PeerConnectionHandle peerHandle,
-    ExternalVideoTrackSourceHandle sourceHandle) noexcept;
+MRS_API mrsResult MRS_CALL mrsPeerConnectionRemoveLocalVideoTracksFromSource(
+    PeerConnectionHandle peer_handle,
+    ExternalVideoTrackSourceHandle source_handle) noexcept;
 
 /// View over an existing video frame encoded in I420 format.
 struct MRS_API mrsI420VideoFrameView {

@@ -71,6 +71,7 @@ namespace TestAppUwp
         private MediaPlayer localVideoPlayer = new MediaPlayer();
         private bool _isLocalVideoPlaying = false;
         private object _isLocalVideoPlayingLock = new object();
+        private LocalVideoTrack _localVideoTrack = null;
 
         private MediaStreamSource remoteVideoSource = null;
         private MediaSource remoteMediaSource = null;
@@ -231,7 +232,6 @@ namespace TestAppUwp
             _peerConnection.RenegotiationNeeded += OnPeerRenegotiationNeeded;
             _peerConnection.TrackAdded += Peer_RemoteTrackAdded;
             _peerConnection.TrackRemoved += Peer_RemoteTrackRemoved;
-            _peerConnection.I420LocalVideoFrameReady += Peer_LocalI420FrameReady;
             _peerConnection.I420RemoteVideoFrameReady += Peer_RemoteI420FrameReady;
             _peerConnection.LocalAudioFrameReady += Peer_LocalAudioFrameReady;
             _peerConnection.RemoteAudioFrameReady += Peer_RemoteAudioFrameReady;
@@ -282,7 +282,8 @@ namespace TestAppUwp
         private void OnDataChannelAdded(DataChannel channel)
         {
             LogMessage($"Added data channel '{channel.Label}' (#{channel.ID}).");
-            RunOnMainThread(() => {
+            RunOnMainThread(() =>
+            {
                 var chat = new ChatChannel { DataChannel = channel };
                 ChatChannels.Add(chat);
                 if (ChatChannels.Count == 1)
@@ -290,7 +291,8 @@ namespace TestAppUwp
                     chatList.SelectedIndex = 0;
                 }
                 channel.MessageReceived += (byte[] message) =>
-                    RunOnMainThread(() => {
+                    RunOnMainThread(() =>
+                    {
                         string text = System.Text.Encoding.UTF8.GetString(message);
                         ChatMessageReceived(chat, text);
                     });
@@ -300,7 +302,8 @@ namespace TestAppUwp
         private void OnDataChannelRemoved(DataChannel channel)
         {
             LogMessage($"Removed data channel '{channel.Label}' (#{channel.ID}).");
-            RunOnMainThread(() => {
+            RunOnMainThread(() =>
+            {
                 var chat = ChatChannels.Where((c) => c.DataChannel == channel).First();
                 ChatChannels.Remove(chat);
             });
@@ -330,7 +333,8 @@ namespace TestAppUwp
 
         private void OnIceStateChanged(IceConnectionState newState)
         {
-            RunOnMainThread(() => {
+            RunOnMainThread(() =>
+            {
                 LogMessage($"ICE state changed to {newState}.");
                 iceStateText.Text = newState.ToString();
             });
@@ -430,7 +434,7 @@ namespace TestAppUwp
                     ? SdpSemantic.UnifiedPlan : SdpSemantic.PlanB);
                 await _peerConnection.InitializeAsync(config);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 LogMessage($"WebRTC native plugin init failed: {ex.Message}");
                 return;
@@ -593,7 +597,8 @@ namespace TestAppUwp
         /// </summary>
         private void OnPeerConnected()
         {
-            RunOnMainThread(() => {
+            RunOnMainThread(() =>
+            {
                 sessionStatusText.Text = "(session joined)";
                 chatTextBox.IsEnabled = true;
             });
@@ -603,32 +608,33 @@ namespace TestAppUwp
         {
             switch (message.MessageType)
             {
-            case NodeDssSignaler.Message.WireMessageType.Offer:
-                _peerConnection.SetRemoteDescription("offer", message.Data);
-                // If we get an offer, we immediately send an answer back
-                _peerConnection.CreateAnswer();
-                break;
+                case NodeDssSignaler.Message.WireMessageType.Offer:
+                    _peerConnection.SetRemoteDescription("offer", message.Data);
+                    // If we get an offer, we immediately send an answer back
+                    _peerConnection.CreateAnswer();
+                    break;
 
-            case NodeDssSignaler.Message.WireMessageType.Answer:
-                _peerConnection.SetRemoteDescription("answer", message.Data);
-                break;
+                case NodeDssSignaler.Message.WireMessageType.Answer:
+                    _peerConnection.SetRemoteDescription("answer", message.Data);
+                    break;
 
-            case NodeDssSignaler.Message.WireMessageType.Ice:
-                // TODO - This is NodeDSS-specific
-                // this "parts" protocol is defined above, in OnIceCandiateReadyToSend listener
-                var parts = message.Data.Split(new string[] { message.IceDataSeparator }, StringSplitOptions.RemoveEmptyEntries);
-                // Note the inverted arguments; candidate is last here, but first in OnIceCandiateReadyToSend
-                _peerConnection.AddIceCandidate(parts[2], int.Parse(parts[1]), parts[0]);
-                break;
+                case NodeDssSignaler.Message.WireMessageType.Ice:
+                    // TODO - This is NodeDSS-specific
+                    // this "parts" protocol is defined above, in OnIceCandiateReadyToSend listener
+                    var parts = message.Data.Split(new string[] { message.IceDataSeparator }, StringSplitOptions.RemoveEmptyEntries);
+                    // Note the inverted arguments; candidate is last here, but first in OnIceCandiateReadyToSend
+                    _peerConnection.AddIceCandidate(parts[2], int.Parse(parts[1]), parts[0]);
+                    break;
 
-            default:
-                throw new InvalidOperationException($"Unhandled signaler message type '{message.MessageType}'");
+                default:
+                    throw new InvalidOperationException($"Unhandled signaler message type '{message.MessageType}'");
             }
         }
 
         private void DssSignaler_OnFailure(Exception e)
         {
-            RunOnMainThread(() => {
+            RunOnMainThread(() =>
+            {
                 LogMessage($"DSS polling failed: {e.Message}");
                 // TODO - differentiate between StartPollingAsync() failure and SendMessageAsync() ones!
                 if (dssSignaler.IsPolling)
@@ -643,7 +649,8 @@ namespace TestAppUwp
 
         private void DssSignaler_OnPollingDone()
         {
-            RunOnMainThread(() => {
+            RunOnMainThread(() =>
+            {
                 isDssPolling = false;
                 pollDssButton.IsEnabled = true;
                 LogMessage($"Polling DSS server stopped.");
@@ -658,7 +665,8 @@ namespace TestAppUwp
         private void LogMessage(string message)
         {
             Debugger.Log(4, "TestAppUWP", message);
-            RunOnMainThread(() => {
+            RunOnMainThread(() =>
+            {
                 debugMessages.Text += message + "\n";
             });
         }
@@ -794,7 +802,8 @@ namespace TestAppUwp
 
         private void OnMediaStateChanged(Windows.Media.Playback.MediaPlayer sender, object args)
         {
-            RunOnMainThread(() => {
+            RunOnMainThread(() =>
+            {
                 if (sender == localVideoPlayer)
                 {
                     localVideoStateText.Text = $"State: {sender.PlaybackSession.PlaybackState}";
@@ -817,7 +826,8 @@ namespace TestAppUwp
             // Now it is safe to call Play() on the MediaElement
             if (sender == localVideoPlayer)
             {
-                RunOnMainThread(() => {
+                RunOnMainThread(() =>
+                {
                     localVideo.MediaPlayer.Play();
                     //startLocalVideo.IsEnabled = true;
                 });
@@ -842,7 +852,8 @@ namespace TestAppUwp
         /// <remarks>This appears to never be called for live sources.</remarks>
         private void OnMediaEnded(MediaPlayer sender, object args)
         {
-            RunOnMainThread(() => {
+            RunOnMainThread(() =>
+            {
                 LogMessage("Local MediaElement video playback ended.");
                 //StopLocalVideo();
                 sender.Pause();
@@ -864,7 +875,7 @@ namespace TestAppUwp
         /// audio and video tracks from the peer connection.
         /// This is called on the UI thread.
         /// </summary>
-        private void StopLocalVideo()
+        private async void StopLocalVideo()
         {
             lock (_isLocalVideoPlayingLock)
             {
@@ -875,16 +886,25 @@ namespace TestAppUwp
                     localVideoSource = null;
                     //localMediaSource.Reset();
                     _isLocalVideoPlaying = false;
-
-                    // Avoid deadlock in audio processing stack, as this call is delegated to the WebRTC
-                    // signaling thread (and will block the caller thread), and audio processing will
-                    // delegate to the UI thread for UWP operations (and will block the signaling thread).
-                    RunOnWorkerThread(() => {
-                        _peerConnection.RemoveLocalAudioTrack();
-                        _peerConnection.RemoveLocalVideoTrack();
-                    });
+                    _localVideoTrack.I420VideoFrameReady -= LocalVideoTrack_I420FrameReady;
                 }
             }
+
+            // Avoid deadlock in audio processing stack, as this call is delegated to the WebRTC
+            // signaling thread (and will block the caller thread), and audio processing will
+            // delegate to the UI thread for UWP operations (and will block the signaling thread).
+            await RunOnWorkerThread(() =>
+            {
+                lock (_isLocalVideoPlayingLock)
+                {
+                    _peerConnection.RemoveLocalAudioTrack();
+                    _peerConnection.RemoveLocalVideoTrack(_localVideoTrack); // TODO - this doesn't unregister the callbacks...
+                    _localVideoTrack.Dispose();
+                    _localVideoTrack = null;
+                }
+            });
+
+            startLocalVideo.IsEnabled = true;
         }
 
         /// <summary>
@@ -918,7 +938,8 @@ namespace TestAppUwp
                     if (_isRemoteVideoPlaying)
                     {
                         // Schedule on the main UI thread to access STA objects.
-                        RunOnMainThread(() => {
+                        RunOnMainThread(() =>
+                        {
                             // Check that the remote video is still playing.
                             // This ensures that rapid calls to add/remove the video track
                             // are serialized, and an earlier remove call doesn't remove the
@@ -942,7 +963,7 @@ namespace TestAppUwp
         /// for local rendering before (or in parallel of) being sent to the remote peer.
         /// </summary>
         /// <param name="frame">The newly captured video frame.</param>
-        private void Peer_LocalI420FrameReady(I420AVideoFrame frame)
+        private void LocalVideoTrack_I420FrameReady(I420AVideoFrame frame)
         {
             localVideoBridge.HandleIncomingVideoFrame(frame);
         }
@@ -967,7 +988,8 @@ namespace TestAppUwp
                     _isRemoteVideoPlaying = true;
                     uint width = frame.width;
                     uint height = frame.height;
-                    RunOnMainThread(() => {
+                    RunOnMainThread(() =>
+                    {
                         remoteVideoSource = CreateVideoStreamSource(width, height);
                         remoteVideoPlayer.Source = MediaSource.CreateFromMediaStreamSource(remoteVideoSource);
                         remoteVideoPlayer.Play();
@@ -1030,10 +1052,13 @@ namespace TestAppUwp
         /// <param name="e">Event arguments.</param>
         private async void StartLocalVideoClicked(object sender, RoutedEventArgs e)
         {
+            // The button will be re-enabled once the current action is finished
+            startLocalVideo.IsEnabled = false;
+
             // Toggle between start and stop local audio/video feeds
             //< TODO dssStatsTimer.IsEnabled used for toggle, but dssStatsTimer should be
             // used also for remote statistics display (so even when no local video active)
-            if (dssStatsTimer.IsEnabled)
+            if (dssStatsTimer.IsEnabled && (_localVideoTrack != null))
             {
                 StopLocalVideo();
                 dssStatsTimer.Stop();
@@ -1046,8 +1071,11 @@ namespace TestAppUwp
                 remoteSkipText.Text = "Skip: -";
                 remoteLateText.Text = "Late: -";
                 startLocalVideo.Content = "Start local video";
+                return;
             }
-            else
+
+            // Only start video if previous track was completely shutdown
+            if (_localVideoTrack == null)
             {
                 LogMessage("Opening local A/V stream...");
 
@@ -1117,7 +1145,8 @@ namespace TestAppUwp
                         framerate = framerate,
                         enableMrc = false // TestAppUWP is a shared app, MRC will not get permission anyway
                     };
-                    await _peerConnection.AddLocalVideoTrackAsync(trackConfig);
+                    _localVideoTrack = await _peerConnection.AddLocalVideoTrackAsync("local_video", trackConfig);
+                    _localVideoTrack.I420VideoFrameReady += LocalVideoTrack_I420FrameReady;
                 }
                 catch (Exception ex)
                 {
@@ -1143,6 +1172,9 @@ namespace TestAppUwp
                 {
                     _peerConnection.CreateOffer();
                 }
+
+                // Enable stopping the video
+                startLocalVideo.IsEnabled = true;
             }
         }
 

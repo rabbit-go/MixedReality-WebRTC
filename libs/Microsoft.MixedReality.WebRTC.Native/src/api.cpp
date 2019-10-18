@@ -1118,7 +1118,7 @@ mrsResult MRS_CALL mrsPeerConnectionAddLocalVideoTrackFromExternalArgb32Source(
   // does not change, because this is not explicitly mentioned in the docs,
   // and the video track is the only one keeping the video source alive.
   std::string track_name_str;
-  if (track_name && (track_name[0] != '\0')) {
+  if (!IsStringNullOrEmpty(track_name)) {
     track_name_str = track_name;
   } else {
     track_name_str = "external_track";
@@ -1139,7 +1139,23 @@ mrsResult MRS_CALL mrsPeerConnectionAddLocalVideoTrackFromExternalArgb32Source(
   return MRS_E_UNKNOWN;  //< TODO Convert from result.error()?
 }
 
-MRS_API mrsResult MRS_CALL mrsPeerConnectionRemoveLocalVideoTracks(
+MRS_API mrsResult MRS_CALL mrsPeerConnectionRemoveLocalVideoTrack(
+    PeerConnectionHandle peer_handle,
+    LocalVideoTrackHandle track_handle) noexcept {
+  auto peer = static_cast<PeerConnection*>(peer_handle);
+  if (!peer) {
+    return MRS_E_INVALID_PEER_HANDLE;
+  }
+  auto track = static_cast<LocalVideoTrack*>(track_handle);
+  if (!track) {
+    return MRS_E_INVALID_PEER_HANDLE;
+  }
+  const mrsResult res =
+      (peer->RemoveLocalVideoTrack(*track).ok() ? MRS_SUCCESS : MRS_E_UNKNOWN);
+  return res;
+}
+
+MRS_API mrsResult MRS_CALL mrsPeerConnectionRemoveLocalVideoTracksFromSource(
     PeerConnectionHandle peer_handle,
     ExternalVideoTrackSourceHandle source_handle) noexcept {
   auto peer = static_cast<PeerConnection*>(peer_handle);
@@ -1150,7 +1166,7 @@ MRS_API mrsResult MRS_CALL mrsPeerConnectionRemoveLocalVideoTracks(
   if (!source) {
     return MRS_E_INVALID_PEER_HANDLE;
   }
-  peer->RemoveLocalVideoTracks(*source);
+  peer->RemoveLocalVideoTracksFromSource(*source);
   return MRS_SUCCESS;
 }
 
@@ -1240,21 +1256,6 @@ mrsResult MRS_CALL mrsPeerConnectionAddDataChannel(
     return MRS_SUCCESS;
   }
   return RTCToAPIError(data_channel.error());
-}
-
-mrsResult MRS_CALL mrsPeerConnectionRemoveLocalVideoTrack(
-    PeerConnectionHandle peerHandle,
-    LocalVideoTrackHandle trackHandle) noexcept {
-  auto peer = static_cast<PeerConnection*>(peerHandle);
-  if (!peer) {
-    return MRS_E_INVALID_PEER_HANDLE;
-  }
-  auto track = static_cast<LocalVideoTrack*>(trackHandle);
-  if (!track) {
-    return MRS_E_INVALID_PARAMETER;
-  }
-  peer->RemoveLocalVideoTrack(*track);
-  return MRS_SUCCESS;
 }
 
 void MRS_CALL mrsPeerConnectionRemoveLocalAudioTrack(

@@ -102,7 +102,7 @@ namespace Microsoft.MixedReality.WebRTC
                 return;
             }
 
-            PeerConnectionInterop.PeerConnection_RemoveLocalVideoTracks(_nativePeerHandle, _nativeHandle);
+            PeerConnectionInterop.PeerConnection_RemoveLocalVideoTracksFromSource(_nativePeerHandle, _nativeHandle);
             _frameRequestCallbackArgsHandle.Free();
             _nativeHandle = IntPtr.Zero;
             _nativePeerHandle = IntPtr.Zero;

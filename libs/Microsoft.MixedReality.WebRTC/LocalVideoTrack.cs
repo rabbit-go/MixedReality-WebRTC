@@ -49,6 +49,16 @@ namespace Microsoft.MixedReality.WebRTC
         }
 
         /// <summary>
+        /// Event that occurs when a video frame has been produced by the underlying source is available.
+        /// </summary>
+        public event I420VideoFrameDelegate I420VideoFrameReady;
+
+        /// <summary>
+        /// Event that occurs when a video frame has been produced by the underlying source is available.
+        /// </summary>
+        public event ARGBVideoFrameDelegate ARGBVideoFrameReady;
+
+        /// <summary>
         /// Handle to native peer connection C++ object the native track is added to, if any.
         /// </summary>
         protected IntPtr _nativePeerHandle = IntPtr.Zero;
@@ -58,12 +68,24 @@ namespace Microsoft.MixedReality.WebRTC
         /// </summary>
         internal IntPtr _nativeHandle = IntPtr.Zero;
 
+        /// <summary>
+        /// Handle to self for interop callbacks. This adds a reference to the current object, preventing
+        /// it from being garbage-collected.
+        /// </summary>
+        private IntPtr _selfHandle = IntPtr.Zero;
+
+        /// <summary>
+        /// Callback arguments to ensure delegates registered with the native layer don't go out of scope.
+        /// </summary>
+        private LocalVideoTrackInterop.InteropCallbackArgs _interopCallbackArgs;
+
         internal LocalVideoTrack(PeerConnection peer, IntPtr nativePeerHandle, IntPtr nativeHandle, string trackName)
         {
             PeerConnection = peer;
             _nativePeerHandle = nativePeerHandle;
             _nativeHandle = nativeHandle;
             Name = trackName;
+            RegisterInteropCallbacks();
         }
 
         internal LocalVideoTrack(ExternalVideoTrackSource source, PeerConnection peer, IntPtr nativePeerHandle,
@@ -74,6 +96,22 @@ namespace Microsoft.MixedReality.WebRTC
             _nativeHandle = nativeHandle;
             Name = trackName;
             Source = source;
+            RegisterInteropCallbacks();
+        }
+
+        private void RegisterInteropCallbacks()
+        {
+            _interopCallbackArgs = new LocalVideoTrackInterop.InteropCallbackArgs()
+            {
+                Track = this,
+                I420FrameCallback = LocalVideoTrackInterop.I420FrameCallback,
+                ARGBFrameCallback = LocalVideoTrackInterop.ARGBFrameCallback,
+            };
+            _selfHandle = Utils.MakeWrapperRef(this);
+            LocalVideoTrackInterop.LocalVideoTrack_RegisterI420FrameCallback(
+                _nativeHandle, _interopCallbackArgs.I420FrameCallback, _selfHandle);
+            LocalVideoTrackInterop.LocalVideoTrack_RegisterARGBFrameCallback(
+                _nativeHandle, _interopCallbackArgs.ARGBFrameCallback, _selfHandle);
         }
 
         #region IDisposable support
@@ -86,23 +124,33 @@ namespace Microsoft.MixedReality.WebRTC
         /// resources can safely be accessed to be disposed.</param>
         protected virtual void Dispose(bool disposing)
         {
-            if (_nativeHandle == IntPtr.Zero)
+            if (_selfHandle != IntPtr.Zero)
             {
-                return;
+                LocalVideoTrackInterop.LocalVideoTrack_RegisterI420FrameCallback(_nativeHandle, null, IntPtr.Zero);
+                LocalVideoTrackInterop.LocalVideoTrack_RegisterARGBFrameCallback(_nativeHandle, null, IntPtr.Zero);
+                GCHandle.FromIntPtr(_selfHandle).Free();
+                if (disposing)
+                {
+                    _interopCallbackArgs = null;
+                }
+                _selfHandle = IntPtr.Zero;
             }
 
-            // Remove from peer connection. Currently this is equivalent to destroying from
-            // the point of view of C# because the native object is kept alive by the peer
-            // connection and never lives on its own.
-            if (_nativePeerHandle != IntPtr.Zero)
+            if (_nativeHandle != IntPtr.Zero)
             {
-                PeerConnectionInterop.PeerConnection_RemoveLocalVideoTrack(_nativePeerHandle, _nativeHandle);
-                _nativePeerHandle = IntPtr.Zero;
+                // Remove from peer connection. Currently this is equivalent to destroying from
+                // the point of view of C# because the native object is kept alive by the peer
+                // connection and never lives on its own.
+                if (_nativePeerHandle != IntPtr.Zero)
+                {
+                    PeerConnectionInterop.PeerConnection_RemoveLocalVideoTrack(_nativePeerHandle, _nativeHandle);
+                    _nativePeerHandle = IntPtr.Zero;
+                }
+                if (disposing)
+                {
+                    PeerConnection = null;
+                }
                 _nativeHandle = IntPtr.Zero;
-            }
-            if (disposing)
-            {
-                PeerConnection = null;
             }
         }
 
@@ -125,5 +173,15 @@ namespace Microsoft.MixedReality.WebRTC
         }
 
         #endregion
+
+        internal void OnI420FrameReady(I420AVideoFrame frame)
+        {
+            I420VideoFrameReady?.Invoke(frame);
+        }
+
+        internal void OnARGBFrameReady(ARGBVideoFrame frame)
+        {
+            ARGBVideoFrameReady?.Invoke(frame);
+        }
     }
 }

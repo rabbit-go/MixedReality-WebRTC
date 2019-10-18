@@ -174,7 +174,7 @@ webrtc::RTCError PeerConnection::RemoveLocalVideoTrack(
   return webrtc::RTCError::OK();
 }
 
-void PeerConnection::RemoveLocalVideoTracks(
+void PeerConnection::RemoveLocalVideoTracksFromSource(
     ExternalVideoTrackSource& source) noexcept {
   // Remove all tracks which share this video track source.
   // Currently there is no support for source sharing, so this should

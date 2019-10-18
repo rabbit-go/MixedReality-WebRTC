@@ -566,22 +566,10 @@ namespace Microsoft.MixedReality.WebRTC
         public event Action<TrackKind> TrackRemoved;
 
         /// <summary>
-        /// Event that occurs when a video frame from a local track has been
-        /// produced locally and is available for render.
-        /// </summary>
-        public event I420VideoFrameDelegate I420LocalVideoFrameReady;
-
-        /// <summary>
         /// Event that occurs when a video frame from a remote peer has been
         /// received and is available for render.
         /// </summary>
         public event I420VideoFrameDelegate I420RemoteVideoFrameReady;
-
-        /// <summary>
-        /// Event that occurs when a video frame from a local track has been
-        /// produced locally and is available for render.
-        /// </summary>
-        public event ARGBVideoFrameDelegate ARGBLocalVideoFrameReady;
 
         /// <summary>
         /// Event that occurs when a video frame from a remote peer has been
@@ -698,9 +686,7 @@ namespace Microsoft.MixedReality.WebRTC
                     RenegotiationNeededCallback = PeerConnectionInterop.RenegotiationNeededCallback,
                     TrackAddedCallback = PeerConnectionInterop.TrackAddedCallback,
                     TrackRemovedCallback = PeerConnectionInterop.TrackRemovedCallback,
-                    I420LocalVideoFrameCallback = PeerConnectionInterop.I420LocalVideoFrameCallback,
                     I420RemoteVideoFrameCallback = PeerConnectionInterop.I420RemoteVideoFrameCallback,
-                    ARGBLocalVideoFrameCallback = PeerConnectionInterop.ARGBLocalVideoFrameCallback,
                     ARGBRemoteVideoFrameCallback = PeerConnectionInterop.ARGBRemoteVideoFrameCallback,
                     LocalAudioFrameCallback = PeerConnectionInterop.LocalAudioFrameCallback,
                     RemoteAudioFrameCallback = PeerConnectionInterop.RemoteAudioFrameCallback
@@ -793,12 +779,8 @@ namespace Microsoft.MixedReality.WebRTC
                             _nativePeerhandle, _peerCallbackArgs.DataChannelAddedCallback, self);
                         PeerConnectionInterop.PeerConnection_RegisterDataChannelRemovedCallback(
                             _nativePeerhandle, _peerCallbackArgs.DataChannelRemovedCallback, self);
-                        PeerConnectionInterop.PeerConnection_RegisterI420LocalVideoFrameCallback(
-                            _nativePeerhandle, _peerCallbackArgs.I420LocalVideoFrameCallback, self);
                         PeerConnectionInterop.PeerConnection_RegisterI420RemoteVideoFrameCallback(
                             _nativePeerhandle, _peerCallbackArgs.I420RemoteVideoFrameCallback, self);
-                        //PeerConnectionInterop.PeerConnection_RegisterARGBLocalVideoFrameCallback(
-                        //    _nativePeerhandle, _peerCallbackArgs.ARGBLocalVideoFrameCallback, self);
                         //PeerConnectionInterop.PeerConnection_RegisterARGBRemoteVideoFrameCallback(
                         //    _nativePeerhandle, _peerCallbackArgs.ARGBRemoteVideoFrameCallback, self);
                         PeerConnectionInterop.PeerConnection_RegisterLocalAudioFrameCallback(
@@ -911,13 +893,17 @@ namespace Microsoft.MixedReality.WebRTC
         }
 
         /// <summary>
-        /// Remove from the current connection the local video track added with <see cref="AddLocalAudioTrackAsync"/>.
+        /// Remove from the current connection the local video track added with <see cref="AddLocalAudioTrackAsync"/>,
+        /// and dispose of the track.
+        /// The lifetime of the track corresponds to being added to the peer connection, and the track is immediately
+        /// destroyed once it is removed. So those actions are equivalent. This is consistent with the fact that
+        /// <see cref="AddLocalAudioTrackAsync"/> has created the track in the first place.
         /// </summary>
         /// <exception xref="InvalidOperationException">The peer connection is not intialized.</exception>
         public void RemoveLocalVideoTrack(LocalVideoTrack track)
         {
             ThrowIfConnectionNotOpen();
-            PeerConnectionInterop.PeerConnection_RemoveLocalVideoTrack(_nativePeerhandle, track._nativeHandle);
+            track.Dispose();
         }
 
         /// <summary>
@@ -1358,19 +1344,9 @@ namespace Microsoft.MixedReality.WebRTC
             TrackRemoved?.Invoke(trackKind);
         }
 
-        internal void OnI420LocalVideoFrameReady(I420AVideoFrame frame)
-        {
-            I420LocalVideoFrameReady?.Invoke(frame);
-        }
-
         internal void OnI420RemoteVideoFrameReady(I420AVideoFrame frame)
         {
             I420RemoteVideoFrameReady?.Invoke(frame);
-        }
-
-        internal void OnARGBLocalVideoFrameReady(ARGBVideoFrame frame)
-        {
-            ARGBLocalVideoFrameReady?.Invoke(frame);
         }
 
         internal void OnARGBRemoteVideoFrameReady(ARGBVideoFrame frame)

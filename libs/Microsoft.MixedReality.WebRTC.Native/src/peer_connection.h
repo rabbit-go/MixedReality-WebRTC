@@ -205,7 +205,8 @@ class PeerConnection : public webrtc::PeerConnectionObserver,
   /// Remove all tracks sharing the given video track source.
   /// Note that currently video source sharing is not supported, so this will
   /// remove at most a single track backed by the given source.
-  void RemoveLocalVideoTracks(ExternalVideoTrackSource& source) noexcept;
+  void RemoveLocalVideoTracksFromSource(
+      ExternalVideoTrackSource& source) noexcept;
 
   //
   // Audio
