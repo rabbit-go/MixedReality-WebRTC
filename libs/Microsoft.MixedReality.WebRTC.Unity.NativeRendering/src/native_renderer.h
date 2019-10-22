@@ -28,8 +28,6 @@ struct I420AVideoFrame {
                  const int width,
                  const int height);
 
-  void Clear();
-  bool HasFrame() const { return width > 0 && height > 0; }
   const std::vector<uint8_t>& GetBuffer(int i) {
     switch (i) {
       case 0:

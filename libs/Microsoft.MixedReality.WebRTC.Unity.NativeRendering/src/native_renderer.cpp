@@ -9,8 +9,10 @@
 
 #pragma warning(disable : 4302 4311 4312)
 
-// Mutex locking order. You may nest locks in this order only. Never go the
-// other way.
+// Mutex locking hierarchy. You may nest locks in this order only. Never go the
+// other way. You don't necessarily have to  have a higher-order guard in place
+// to lock a lower one, but once a lower one is locked, a higher one must not be
+// subsequently locked.
 //  1. g_lock -- Global lock (file-level)
 //  2. s_lock -- Static lock (class-level)
 //  3. m_lock -- Local lock (instance-level)
@@ -44,10 +46,6 @@ void I420AVideoFrame::CopyFrame(const void* yptr,
   memcpy(ybuffer.data(), yptr, ysize);
   memcpy(ubuffer.data(), uptr, usize);
   memcpy(vbuffer.data(), vptr, vsize);
-}
-
-void I420AVideoFrame::Clear() {
-  width = height = 0;
 }
 
 NativeRendererHandle NativeRenderer::Create(PeerConnectionHandle peerHandle) {
@@ -230,14 +228,14 @@ void MRS_CALL NativeRenderer::DoVideoUpdate() {
   {
     // Global lock
     std::lock_guard guard(g_lock);
-    // Copy and clear the video update queue.
+    // Copy and zero out the video update queue.
     videoUpdateQueue = g_videoUpdateQueue;
     for (size_t i = 0; i < g_videoUpdateQueue.size(); ++i) {
       g_videoUpdateQueue[i] = nullptr;
     }
   }
 
-  // Gather the renderer instances.
+  // Gather the renderer instances (this is a sparse array).
   auto renderers = NativeRenderer::MultiGet(videoUpdateQueue);
 
   for (auto renderer : renderers) {
@@ -258,9 +256,10 @@ void MRS_CALL NativeRenderer::DoVideoUpdate() {
 
     {
       int index = 0;
-      for (auto textureDesc : textures) {
+      for (const TextureDesc& textureDesc : textures) {
         VideoDesc videoDesc = {VideoFormat::R8, (uint32_t)textureDesc.width,
                                (uint32_t)textureDesc.height};
+        /*
         RenderApi::TextureUpdate update;
         if (g_renderApi->BeginModifyTexture(videoDesc, &update)) {
           int copyPitch = std::min<int>(videoDesc.width, update.rowPitch);
@@ -273,6 +272,11 @@ void MRS_CALL NativeRenderer::DoVideoUpdate() {
           }
           g_renderApi->EndModifyTexture(textureDesc.texture, update, videoDesc);
         }
+        */
+        const std::vector<uint8_t>& src = remoteI420Frame.GetBuffer(index);
+        g_renderApi->SimpleUpdateTexture(textureDesc.texture, textureDesc.width,
+                                         textureDesc.height, src.data(),
+                                         src.size());
         ++index;
       }
     }
