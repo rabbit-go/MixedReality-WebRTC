@@ -208,8 +208,7 @@ void NativeRenderer::I420RemoteVideoFrameCallback(void* user_data,
     {
       // Global lock
       std::lock_guard guard(g_lock);
-      // Queue for texture render, unless already queued. Try to reuse a free
-      // slot before allocating a new one.
+      // Queue for texture render, unless already queued.
       int slot = (int)renderer->m_myHandle & 0xffff;
       if (g_videoUpdateQueue.size() <= slot) {
         g_videoUpdateQueue.resize((size_t)slot + 1);

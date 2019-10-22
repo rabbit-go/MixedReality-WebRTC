@@ -383,6 +383,7 @@ void RenderApi_D3D11::SimpleUpdateTexture(void* dstTexture,
                                           uint32_t height,
                                           const uint8_t* dataPtr,
                                           size_t dataLen) {
+  // Assuming texture is R8 format.
   if (dataLen >= (size_t)width * height) {
     auto dstD3DTexture = (ID3D11Texture2D*)dstTexture;
     D3D11_TEXTURE2D_DESC desc;
