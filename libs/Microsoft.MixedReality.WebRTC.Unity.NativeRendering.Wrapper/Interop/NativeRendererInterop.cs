@@ -27,7 +27,7 @@ namespace Microsoft.MixedReality.WebRTC.Unity.NativeRendering.Wrapper.Interop
         public static extern uint NativeRenderer_RegisterRemoteTextures(IntPtr nativeRendererHandle, VideoKind format, TextureDesc[] textures, int textureCount);
 
         [DllImport(Utils.dllPath, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
-            EntryPoint = "mrsNativeRendererUnregisterTexture")]
+            EntryPoint = "mrsNativeRendererUnregisterRemoteTextures")]
         public static extern uint NativeRenderer_UnregisterRemoteTextures(IntPtr v);
 
         [DllImport(Utils.dllPath, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
