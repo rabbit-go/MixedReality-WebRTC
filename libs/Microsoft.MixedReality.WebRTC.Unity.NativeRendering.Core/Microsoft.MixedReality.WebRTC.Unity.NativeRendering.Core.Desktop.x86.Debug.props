@@ -5,6 +5,9 @@
         <OrgWebRtcPlatform Condition="'$(Platform)' == 'x64'">x64</OrgWebRtcPlatform>
     </PropertyGroup>
     <ItemDefinitionGroup>
+        <ClCompile>
+            <PreprocessorDefinitions>SUPPORT_D3D11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+        </ClCompile>
         <Link>
             <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)..\..\lib\native\lib\win10\$(OrgWebRtcPlatform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
         </Link>

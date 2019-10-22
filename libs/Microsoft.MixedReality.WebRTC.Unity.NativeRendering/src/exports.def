@@ -1,0 +1,9 @@
+EXPORTS
+	OnGraphicsDeviceEvent
+	UnityPluginLoad
+	UnityPluginUnload
+	mrsNativeRendererCreate
+	mrsNativeRendererDestroy
+	mrsNativeRendererRegisterRemoteTextures
+	mrsNativeRendererUnregisterRemoteTextures
+	mrsNativeRendererGetVideoUpdateMethod

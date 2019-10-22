@@ -8,7 +8,7 @@ namespace Microsoft.MixedReality.WebRTC.Interop
     /// Interop boolean.
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Size = 4)]
-    internal struct mrsBool
+    public struct mrsBool
     {
         public static readonly mrsBool True = new mrsBool(true);
         public static readonly mrsBool False = new mrsBool(false);
@@ -33,27 +33,23 @@ namespace Microsoft.MixedReality.WebRTC.Interop
         public MonoPInvokeCallbackAttribute(Type t) { }
     }
 
-    internal static class Utils
+    public static class Utils
     {
-#if MR_SHARING_WIN
-        internal const string dllPath = "Microsoft.MixedReality.WebRTC.Native.dll";
-#elif MR_SHARING_ANDROID
-        internal const string dllPath = "Microsoft.MixedReality.WebRTC.Native.so";
-#endif
+        internal const string dllPath = "Microsoft.MixedReality.WebRTC.Native";
 
         // Error codes returned by the C API -- see api.h
-        internal const uint MRS_SUCCESS = 0u;
-        internal const uint MRS_E_UNKNOWN = 0x80000000u;
-        internal const uint MRS_E_INVALID_PARAMETER = 0x80000001u;
-        internal const uint MRS_E_INVALID_OPERATION = 0x80000002u;
-        internal const uint MRS_E_WRONG_THREAD = 0x80000003u;
-        internal const uint MRS_E_NOTFOUND = 0x80000004u;
-        internal const uint MRS_E_INVALID_PEER_HANDLE = 0x80000101u;
-        internal const uint MRS_E_PEER_NOT_INITIALIZED = 0x80000102u;
-        internal const uint MRS_E_SCTP_NOT_NEGOTIATED = 0x80000301u;
-        internal const uint MRS_E_INVALID_DATA_CHANNEL_ID = 0x80000302u;
+        public const uint MRS_SUCCESS = 0u;
+        public const uint MRS_E_UNKNOWN = 0x80000000u;
+        public const uint MRS_E_INVALID_PARAMETER = 0x80000001u;
+        public const uint MRS_E_INVALID_OPERATION = 0x80000002u;
+        public const uint MRS_E_WRONG_THREAD = 0x80000003u;
+        public const uint MRS_E_NOTFOUND = 0x80000004u;
+        public const uint MRS_E_INVALID_PEER_HANDLE = 0x80000101u;
+        public const uint MRS_E_PEER_NOT_INITIALIZED = 0x80000102u;
+        public const uint MRS_E_SCTP_NOT_NEGOTIATED = 0x80000301u;
+        public const uint MRS_E_INVALID_DATA_CHANNEL_ID = 0x80000302u;
 
-        public static T ToWrapper<T>(IntPtr peer) where T : class
+        internal static T ToWrapper<T>(IntPtr peer) where T : class
         {
             var handle = GCHandle.FromIntPtr(peer);
             var wrapper = (handle.Target as T);
@@ -69,7 +65,7 @@ namespace Microsoft.MixedReality.WebRTC.Interop
 
         [DllImport(dllPath, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
             EntryPoint = "mrsSdpForceCodecs")]
-        public static unsafe extern uint SdpForceCodecs(string message, SdpFilter audioFilter, SdpFilter videoFilter,
+        internal static unsafe extern uint SdpForceCodecs(string message, SdpFilter audioFilter, SdpFilter videoFilter,
             StringBuilder messageOut, ref ulong messageOutLength);
 
 
