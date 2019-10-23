@@ -5,7 +5,6 @@
 #pragma once
 
 #include "../../Microsoft.MixedReality.WebRTC.Native/include/api.h"
-#include "../../Microsoft.MixedReality.WebRTC.Native/include/export.h"
 #include "./Unity/IUnityGraphics.h"
 #include "./Unity/IUnityInterface.h"
 
@@ -34,7 +33,7 @@ constexpr const mrsResult MRS_E_INVALID_NATIVE_RENDERER_HANDLE{0x80000401};
 // Native rendering
 //
 
-/// Opaque handle to a native PeerConnection C++ object.
+/// Opaque handle to a native NativeRenderer C++ object.
 using NativeRendererHandle = void*;
 
 enum class VideoKind : int32_t {
