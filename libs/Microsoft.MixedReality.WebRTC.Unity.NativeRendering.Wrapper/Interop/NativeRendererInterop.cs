@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using Microsoft.MixedReality.WebRTC.Interop;
 
 namespace Microsoft.MixedReality.WebRTC.Unity.NativeRendering.Wrapper.Interop
 {
@@ -33,5 +32,9 @@ namespace Microsoft.MixedReality.WebRTC.Unity.NativeRendering.Wrapper.Interop
         [DllImport(Utils.dllPath, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
             EntryPoint = "mrsNativeRendererGetVideoUpdateMethod")]
         public static extern IntPtr NativeRenderer_GetVideoUpdateMethod();
+
+        [DllImport(Utils.dllPath, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
+    EntryPoint = "mrsSetLoggingFunctions")]
+        public static extern IntPtr NativeRenderer_SetLoggingFunctions(LogCallback logDebugCallback, LogCallback logErrorCallback, LogCallback logWarningCallback);
     }
 }

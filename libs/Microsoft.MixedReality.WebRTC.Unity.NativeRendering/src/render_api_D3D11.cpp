@@ -325,7 +325,7 @@ void RenderApi_D3D11::EndModifyTexture(void* dstTexture,
 
 #if 0
     // Debugging.
-    ctx->UpdateSubresource(dstD3DTexture, 0, nullptr, update.Data, update.RowPitch, 0);
+    ctx->UpdateSubresource(dstD3DTexture, 0, nullptr, update.data, update.rowPitch, 0);
     ctx->Unmap(srcD3DTexture, 0);
 #else
   // Immediately unmap, to make sure we don't leak resources and to make sure
@@ -374,8 +374,8 @@ void RenderApi_D3D11::EndModifyTexture(void* dstTexture,
     }
   }
 #endif
-
   m_pool->ReleaseStagingTexture(srcD3DTexture);
+  ctx->Release();
 }
 
 void RenderApi_D3D11::SimpleUpdateTexture(void* dstTexture,

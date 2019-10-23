@@ -8,6 +8,7 @@
 
 #include "api.h"
 #include "native_renderer.h"
+#include "log_helpers.h"
 
 // Globals
 static IUnityInterfaces* s_UnityInterfaces = nullptr;
@@ -75,4 +76,12 @@ mrsResult MRS_CALL mrsNativeRendererUnregisterRemoteTextures(
 
 VideoRenderMethod MRS_CALL mrsNativeRendererGetVideoUpdateMethod() noexcept {
   return NativeRenderer::DoVideoUpdate;
+}
+
+void MRS_CALL mrsSetLoggingFunctions(LogFunction logDebugFunc,
+                                     LogFunction logErrorFunc,
+                                     LogFunction logWarningFunc) {
+  UnityLogger::SetLoggingFunctions(logDebugFunc,
+                                   logErrorFunc,
+                                   logWarningFunc);
 }

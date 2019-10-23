@@ -5,6 +5,7 @@
 #include "pch.h"
 
 #include "api.h"
+#include "log_helpers.h"
 #include "native_renderer.h"
 
 #pragma warning(disable : 4302 4311 4312)
@@ -46,6 +47,17 @@ void I420AVideoFrame::CopyFrame(const void* yptr,
   memcpy(ybuffer.data(), yptr, ysize);
   memcpy(ubuffer.data(), uptr, usize);
   memcpy(vbuffer.data(), vptr, vsize);
+#if 0
+  // Validate the frame has real data, changing over time.
+  uint64_t yhash = 0, uhash = 0, vhash = 0;
+  for (auto value : ybuffer)
+    yhash += value;
+  for (auto value : ubuffer)
+    uhash += value;
+  for (auto value : vbuffer)
+    vhash += value;
+  Log_Debug("yhash: %llx, uhash: %llx, vhash: %llx", yhash, uhash, vhash);
+#endif
 }
 
 NativeRendererHandle NativeRenderer::Create(PeerConnectionHandle peerHandle) {
@@ -145,6 +157,7 @@ NativeRenderer::NativeRenderer(PeerConnectionHandle peerHandle)
 NativeRenderer::~NativeRenderer() {}
 
 void NativeRenderer::Shutdown() {
+  Log_Debug("UnregisterRemoteTextures");
   UnregisterRemoteTextures();
 }
 
@@ -164,6 +177,9 @@ void NativeRenderer::RegisterRemoteTextures(VideoKind format,
         mrsPeerConnectionRegisterI420RemoteVideoFrameCallback(
             m_peerHandle, NativeRenderer::I420RemoteVideoFrameCallback,
             m_myHandle);
+
+        Log_Debug("RegisterRemoteTextures: %p, %p, %p", textDescs[0].texture,
+                  textDescs[1].texture, textDescs[2].texture);
       }
       break;
   }
@@ -234,7 +250,7 @@ void MRS_CALL NativeRenderer::DoVideoUpdate() {
     }
   }
 
-  // Gather the renderer instances (this is a sparse array).
+  // Gather the queued renderer instances (this is a sparse array).
   auto renderers = NativeRenderer::MultiGet(videoUpdateQueue);
 
   for (auto renderer : renderers) {
@@ -253,12 +269,29 @@ void MRS_CALL NativeRenderer::DoVideoUpdate() {
       remoteI420Frame = renderer->m_I420RemoteVideoFrame;
     }
 
+#if 0
+    // Validate the frame has real data, changing over time.
+    uint64_t yhash = 0, uhash = 0, vhash = 0;
+    for (auto value : remoteI420Frame.ybuffer)
+      yhash += value;
+    for (auto value : remoteI420Frame.ubuffer)
+      uhash += value;
+    for (auto value : remoteI420Frame.vbuffer)
+      vhash += value;
+    Log_Debug("yhash: %llx, uhash: %llx, vhash: %llx", yhash, uhash, vhash);
+#endif
+
     {
       int index = 0;
       for (const TextureDesc& textureDesc : textures) {
+#if 0
+        const std::vector<uint8_t>& src = remoteI420Frame.GetBuffer(index);
+        g_renderApi->SimpleUpdateTexture(textureDesc.texture, textureDesc.width,
+                                         textureDesc.height, src.data(),
+                                         src.size());
+#else
         VideoDesc videoDesc = {VideoFormat::R8, (uint32_t)textureDesc.width,
                                (uint32_t)textureDesc.height};
-        /*
         RenderApi::TextureUpdate update;
         if (g_renderApi->BeginModifyTexture(videoDesc, &update)) {
           int copyPitch = std::min<int>(videoDesc.width, update.rowPitch);
@@ -271,11 +304,7 @@ void MRS_CALL NativeRenderer::DoVideoUpdate() {
           }
           g_renderApi->EndModifyTexture(textureDesc.texture, update, videoDesc);
         }
-        */
-        const std::vector<uint8_t>& src = remoteI420Frame.GetBuffer(index);
-        g_renderApi->SimpleUpdateTexture(textureDesc.texture, textureDesc.width,
-                                         textureDesc.height, src.data(),
-                                         src.size());
+#endif
         ++index;
       }
     }

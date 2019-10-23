@@ -5,9 +5,9 @@
 #pragma once
 
 #include "../../Microsoft.MixedReality.WebRTC.Native/include/api.h"
+#include "../../Microsoft.MixedReality.WebRTC.Native/include/export.h"
 #include "./Unity/IUnityGraphics.h"
 #include "./Unity/IUnityInterface.h"
-#include "export.h"
 
 extern "C" {
 
@@ -72,3 +72,13 @@ mrsNativeRendererUnregisterRemoteTextures(NativeRendererHandle handle) noexcept;
 MRS_API VideoRenderMethod MRS_CALL
 mrsNativeRendererGetVideoUpdateMethod() noexcept;
 }
+
+//
+// Utils
+//
+
+typedef void (*LogFunction)(const char*);
+
+MRS_API void MRS_CALL mrsSetLoggingFunctions(LogFunction logDebugFunc,
+                                             LogFunction logErrorFunc,
+                                             LogFunction logWarningFunc);

@@ -10,6 +10,7 @@
     <ClCompile Include="..\render_api_D3D11.cpp" />
     <ClCompile Include="..\render_api_D3D12.cpp" />
     <ClCompile Include="..\render_api_OpenGLCoreES.cpp" />
+    <ClCompile Include="..\log_helpers.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\pch.h" />
@@ -17,7 +18,6 @@
     <ClInclude Include="..\..\include\api.h">
       <Filter>interop</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\export.h" />
     <ClInclude Include="..\native_renderer.h" />
     <ClInclude Include="..\render_api.h" />
     <ClInclude Include="..\video_types.h" />
@@ -39,6 +39,7 @@
     <ClInclude Include="..\Unity\IUnityInterface.h">
       <Filter>Unity</Filter>
     </ClInclude>
+    <ClInclude Include="..\log_helpers.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="../exports.def" />

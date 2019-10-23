@@ -7,3 +7,4 @@ EXPORTS
 	mrsNativeRendererRegisterRemoteTextures
 	mrsNativeRendererUnregisterRemoteTextures
 	mrsNativeRendererGetVideoUpdateMethod
+	mrsSetLoggingFunctions

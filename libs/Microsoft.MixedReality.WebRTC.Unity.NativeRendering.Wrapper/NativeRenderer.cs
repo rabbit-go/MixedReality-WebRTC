@@ -11,6 +11,8 @@ namespace Microsoft.MixedReality.WebRTC.Unity.NativeRendering.Wrapper
         ARGB = 2
     }
 
+    public delegate void LogCallback(string str);
+
     public class TextureDesc
     {
         public IntPtr texture;
@@ -55,6 +57,11 @@ namespace Microsoft.MixedReality.WebRTC.Unity.NativeRendering.Wrapper
         public void Dispose()
         {
             NativeRendererInterop.NativeRenderer_Destroy(out _nativeHandle);
+        }
+
+        public static void SetLoggingFunctions(LogCallback logDebugCallback, LogCallback logErrorCallback, LogCallback logWarningCallback)
+        {
+            NativeRendererInterop.NativeRenderer_SetLoggingFunctions(logDebugCallback, logErrorCallback, logWarningCallback);
         }
     }
 }

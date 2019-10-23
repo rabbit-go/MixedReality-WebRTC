@@ -36,6 +36,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="..\api.cpp" />
+    <ClCompile Include="..\log_helpers.cpp" />
     <ClCompile Include="..\native_renderer.cpp" />
     <ClCompile Include="..\render_api.cpp" />
     <ClCompile Include="..\render_api_D3D11.cpp" />
@@ -44,7 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\api.h" />
-    <ClInclude Include="..\..\include\export.h" />
+    <ClInclude Include="..\log_helpers.h" />
     <ClInclude Include="..\native_renderer.h" />
     <ClInclude Include="..\pch.h" />
     <ClInclude Include="..\render_api.h" />
