@@ -1,8 +1,8 @@
 using System;
 using System.Linq;
-using Microsoft.MixedReality.WebRTC.Unity.NativeRendering.Wrapper.Interop;
+using Microsoft.MixedReality.WebRTC.UnityPlugin.Interop;
 
-namespace Microsoft.MixedReality.WebRTC.Unity.NativeRendering.Wrapper
+namespace Microsoft.MixedReality.WebRTC.UnityPlugin
 {
     public enum VideoKind : int
     {

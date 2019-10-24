@@ -53,7 +53,7 @@ class NativeRenderer {
 
   ~NativeRenderer();
 
-  NativeRendererHandle GetNativeHandle() const { return m_myHandle; }
+  NativeRendererHandle GetNativeHandle() const { return m_handle; }
   void RegisterRemoteTextures(VideoKind format,
                               TextureDesc textDescs[],
                               int textureCount);
@@ -65,7 +65,7 @@ class NativeRenderer {
                                     IUnityInterfaces* unityInterfaces);
 
  private:
-  NativeRendererHandle m_myHandle;
+  NativeRendererHandle m_handle;
   std::mutex m_lock;
   void* m_peerHandle{nullptr};
   std::vector<TextureDesc> m_remoteTextures;

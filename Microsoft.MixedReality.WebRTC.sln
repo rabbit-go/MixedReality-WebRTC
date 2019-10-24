@@ -27,9 +27,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{35C3F3A6-2
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestNetCoreConsole", "examples\TestNetCoreConsole\TestNetCoreConsole.csproj", "{C17D2554-9409-4CC7-8337-E3FBE3CAE415}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Microsoft.MixedReality.WebRTC.Unity.NativeRendering.Win32", "libs\Microsoft.MixedReality.WebRTC.Unity.NativeRendering\src\win32\Microsoft.MixedReality.WebRTC.Unity.NativeRendering.vcxproj", "{3D2AAA9E-C000-4669-AC09-D755D5FAC7D3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Microsoft.MixedReality.WebRTC.UnityPlugin.Native.Win32", "libs\Microsoft.MixedReality.WebRTC.UnityPlugin.Native\src\win32\Microsoft.MixedReality.WebRTC.UnityPlugin.Native.vcxproj", "{3D2AAA9E-C000-4669-AC09-D755D5FAC7D3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.MixedReality.WebRTC.Unity.NativeRendering.Wrapper", "libs\Microsoft.MixedReality.WebRTC.Unity.NativeRendering.Wrapper\Microsoft.MixedReality.WebRTC.Unity.NativeRendering.Wrapper.csproj", "{9D011216-9E89-4BF4-BA17-06E117FA8545}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.MixedReality.WebRTC.UnityPlugin", "libs\Microsoft.MixedReality.WebRTC.UnityPlugin\Microsoft.MixedReality.WebRTC.UnityPlugin.csproj", "{9D011216-9E89-4BF4-BA17-06E117FA8545}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -61,7 +61,8 @@ void I420AVideoFrame::CopyFrame(const void* yptr,
 }
 
 NativeRendererHandle NativeRenderer::Create(PeerConnectionHandle peerHandle) {
-  NativeRenderer* renderer = new NativeRenderer(peerHandle);
+  auto renderer =
+      std::shared_ptr<NativeRenderer>(new NativeRenderer(peerHandle));
   {
     // Handle format is:
     //  High 16 bits: generation
@@ -93,8 +94,8 @@ NativeRendererHandle NativeRenderer::Create(PeerConnectionHandle peerHandle) {
     }
     int gen = g_generations[slot];
     NativeRendererHandle handle = (NativeRendererHandle)((gen << 16) | slot);
-    renderer->m_myHandle = handle;
-    g_instances[slot] = std::shared_ptr<NativeRenderer>(renderer);
+    renderer->m_handle = handle;
+    g_instances[slot] = renderer;
     return handle;
   }
 }
@@ -152,7 +153,7 @@ std::vector<std::shared_ptr<NativeRenderer>> NativeRenderer::MultiGet(
 }
 
 NativeRenderer::NativeRenderer(PeerConnectionHandle peerHandle)
-    : m_peerHandle(peerHandle), m_myHandle(nullptr) {}
+    : m_peerHandle(peerHandle), m_handle(nullptr) {}
 
 NativeRenderer::~NativeRenderer() {}
 
@@ -176,7 +177,7 @@ void NativeRenderer::RegisterRemoteTextures(VideoKind format,
         m_remoteTextures[2] = textDescs[2];
         mrsPeerConnectionRegisterI420RemoteVideoFrameCallback(
             m_peerHandle, NativeRenderer::I420RemoteVideoFrameCallback,
-            m_myHandle);
+            m_handle);
 
         Log_Debug("RegisterRemoteTextures: %p, %p, %p", textDescs[0].texture,
                   textDescs[1].texture, textDescs[2].texture);
@@ -225,11 +226,11 @@ void NativeRenderer::I420RemoteVideoFrameCallback(void* user_data,
       // Global lock
       std::lock_guard guard(g_lock);
       // Queue for texture render, unless already queued.
-      int slot = (int)renderer->m_myHandle & 0xffff;
+      int slot = (int)renderer->m_handle & 0xffff;
       if (g_videoUpdateQueue.size() <= slot) {
         g_videoUpdateQueue.resize((size_t)slot + 1);
       }
-      g_videoUpdateQueue[slot] = renderer->m_myHandle;
+      g_videoUpdateQueue[slot] = renderer->m_handle;
     }
   }
 }

@@ -2,7 +2,7 @@
 
   <!-- This needs to go first, before Microsoft.Common.props is imported  -->
   <PropertyGroup>
-    <BaseIntermediateOutputPath>..\..\build\Microsoft.MixedReality.WebRTC.Unity.NativeRendering.Wrapper\$(Configuration)</BaseIntermediateOutputPath>
+    <BaseIntermediateOutputPath>..\..\build\Microsoft.MixedReality.WebRTC.UnityPlugin\$(Configuration)</BaseIntermediateOutputPath>
     <OutputPath>..\..\bin\netstandard2.0\$(Configuration)\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
@@ -24,7 +24,7 @@
     <RepositoryType>github</RepositoryType>
     <Copyright>Copyright (c) Microsoft Corporation</Copyright>
     <PackageTags>webrtc video audio streaming</PackageTags>
-    <DocumentationFile>..\..\bin\$(TargetFramework)\$(Configuration)\Microsoft.MixedReality.WebRTC.Unity.NativeRendering.Wrapper.xml</DocumentationFile>
+    <DocumentationFile>..\..\bin\$(TargetFramework)\$(Configuration)\Microsoft.MixedReality.WebRTC.UnityPlugin.xml</DocumentationFile>
   </PropertyGroup>
   
   <ItemGroup>
@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <NativeUnityPluginSourceFiles Include="$(OutputPath)\Microsoft.MixedReality.WebRTC.Unity.NativeRendering.Wrapper.dll;$(OutputPath)\Microsoft.MixedReality.WebRTC.Unity.NativeRendering.Wrapper.pdb" />
+    <NativeUnityPluginSourceFiles Include="$(OutputPath)\Microsoft.MixedReality.WebRTC.UnityPlugin.dll;$(OutputPath)\Microsoft.MixedReality.WebRTC.UnityPlugin.pdb" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
