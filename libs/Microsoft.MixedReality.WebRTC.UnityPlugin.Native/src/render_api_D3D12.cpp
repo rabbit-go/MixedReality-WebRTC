@@ -156,14 +156,14 @@ bool RenderApi_D3D12::BeginModifyTexture(const VideoDesc& desc,
 
   // Fill data
   const UINT64 kDataSize =
-      desc.Width * desc.Height * GetBytesPerPixel(desc.Format);
+      desc.width * desc.height * GetBytesPerPixel(desc.format);
   ID3D12Resource* upload = GetUploadResource(kDataSize);
   void* mapped = nullptr;
   upload->Map(0, nullptr, &mapped);
 
-  update->Handle = upload;
-  update->RowPitch = textureWidth * GetBytesPerPixel(desc.Format);
-  update->Data = static_cast<uint8_t*>(mapped);
+  update->handle = upload;
+  update->rowPitch = textureWidth * GetBytesPerPixel(desc.format);
+  update->data = static_cast<uint8_t*>(mapped);
   return true;
 }
 
@@ -173,7 +173,7 @@ void RenderApi_D3D12::EndModifyTexture(void* dstTexture,
                                        const std::vector<VideoRect>& rects) {
   ID3D12Device* device = s_D3D12->GetDevice();
 
-  auto upload = (ID3D12Resource*)update->Handle;
+  auto upload = (ID3D12Resource*)update->handle;
   upload->Unmap(0, nullptr);
 
   auto resource = (ID3D12Resource*)dstTexture;
@@ -203,8 +203,8 @@ void RenderApi_D3D12::EndModifyTexture(void* dstTexture,
   size_t rectCount = (rects.size() == 0) ? 1 : rects.size();
   for (const auto& rect : rects) {
     D3D12_BOX srcBox{
-        rect.X, rect.Y, 0, rect.X + rect.Width, rect.Y + rect.Height, 0};
-    s_D3D12CmdList->CopyTextureRegion(&dstLoc, rect.X, rect.Y, 0, &srcLoc,
+        rect.x, rect.y, 0, rect.x + rect.width, rect.y + rect.height, 0};
+    s_D3D12CmdList->CopyTextureRegion(&dstLoc, rect.x, rect.y, 0, &srcLoc,
                                       &srcBox);
   }
 
@@ -219,6 +219,7 @@ void RenderApi_D3D12::SimpleUpdateTexture(void* dstTexture,
                                           uint32_t height,
                                           const uint8_t* dataPtr,
                                           size_t dataLen) {
+  // TODO: Implement DX12 version of this
   if (dataLen >= width * height) {
     auto dstD3DTexture = (ID3D11Texture2D*)dstTexture;
     ID3D11DeviceContext* ctx = nullptr;

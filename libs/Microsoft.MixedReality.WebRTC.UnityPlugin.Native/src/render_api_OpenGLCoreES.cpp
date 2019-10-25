@@ -258,7 +258,7 @@ void RenderApi_OpenGLCoreES::ReleaseResources() {
 bool RenderApi_OpenGLCoreES::BeginModifyTexture(const VideoDesc& desc,
                                                 TextureUpdate* update) {
   // Validate our preconditions.
-  if (update == nullptr || desc.Width == 0 || desc.Height == 0) {
+  if (update == nullptr || desc.width == 0 || desc.height == 0) {
     return false;
   }
 
@@ -279,7 +279,7 @@ bool RenderApi_OpenGLCoreES::BeginModifyTexture(const VideoDesc& desc,
 #if SUPPORT_OPENGL_CORE
   GLubyte* ptr = (GLubyte*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
 #else
-  GLsizeiptr size = desc.Height * desc.Width * GetBytesPerPixel(desc.Format);
+  GLsizeiptr size = desc.height * desc.width * GetBytesPerPixel(desc.format);
   GLubyte* ptr = (GLubyte*)glMapBufferRange(
       GL_PIXEL_UNPACK_BUFFER, 0, size,
       GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
@@ -290,10 +290,10 @@ bool RenderApi_OpenGLCoreES::BeginModifyTexture(const VideoDesc& desc,
     return false;
   }
 
-  update->RowPitch = desc.Width * GetBytesPerPixel(desc.Format);
-  update->SlicePitch = desc.Width * update->RowPitch;
-  update->Data = ptr;
-  update->Handle = (void*)(size_t)bufferId;
+  update->rowPitch = desc.width * GetBytesPerPixel(desc.format);
+  update->slicePitch = desc.width * update->rowPitch;
+  update->data = ptr;
+  update->handle = (void*)(size_t)bufferId;
   return true;
 }
 
@@ -317,7 +317,7 @@ void RenderApi_OpenGLCoreES::EndModifyTexture(
   size_t rectCount = (rects.size() == 0) ? 1 : rects.size();
 
   GLenum glFormat = 0;
-  switch (desc.Format) {
+  switch (desc.format) {
     case VideoFormat::R8:
       glFormat = GL_RED;
       break;
@@ -337,10 +337,10 @@ void RenderApi_OpenGLCoreES::EndModifyTexture(
     for (size_t i = 0; i < rectCount; ++i) {
       glTexSubImage2D(GL_TEXTURE_2D,      // Target
                       0,                  // Mip Level
-                      rectPtr[i].X,       // xOffset
-                      rectPtr[i].Y,       // yOffset
-                      rectPtr[i].Width,   // Copy Width
-                      rectPtr[i].Height,  // Copy Height
+                      rectPtr[i].x,       // xOffset
+                      rectPtr[i].y,       // yOffset
+                      rectPtr[i].width,   // Copy Width
+                      rectPtr[i].height,  // Copy Height
                       glFormat, GL_UNSIGNED_BYTE,
                       0 /*update.Data*/);  // Use PBO
     }
@@ -348,7 +348,7 @@ void RenderApi_OpenGLCoreES::EndModifyTexture(
   glBindTexture(GL_TEXTURE_2D, 0);
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-  auto bufferId = (GLuint)(size_t)update.Handle;
+  auto bufferId = (GLuint)(size_t)update.handle;
   m_pool->ReleasePixelBuffer(bufferId);
 }
 
@@ -357,6 +357,7 @@ void RenderApi_OpenGLCoreES::SimpleUpdateTexture(void* dstTexture,
                                                  uint32_t height,
                                                  const uint8_t* dataPtr,
                                                  size_t dataLen) {
+  // TODO: Implement OpenGL version of this
   if (dataLen >= width * height) {
     auto dstD3DTexture = (ID3D11Texture2D*)dstTexture;
     ID3D11DeviceContext* ctx = nullptr;
