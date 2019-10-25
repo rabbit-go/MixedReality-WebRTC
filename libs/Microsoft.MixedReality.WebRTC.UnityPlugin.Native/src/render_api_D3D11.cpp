@@ -289,6 +289,7 @@ bool RenderApi_D3D11::BeginModifyTexture(const VideoDesc& desc,
   ID3D11Texture2D* stagingTexture =
       m_pool->GetFreeStagingTexture(m_device, desc);
   if (stagingTexture == nullptr) {
+    ctx->Release();
     return false;
   }
 
@@ -297,6 +298,7 @@ bool RenderApi_D3D11::BeginModifyTexture(const VideoDesc& desc,
   D3D11_MAPPED_SUBRESOURCE mappedRes{};
   HRESULT hr = ctx->Map(stagingTexture, 0, D3D11_MAP_WRITE, 0, &mappedRes);
   if (FAILED(hr)) {
+    ctx->Release();
     return false;
   }
 
@@ -304,6 +306,7 @@ bool RenderApi_D3D11::BeginModifyTexture(const VideoDesc& desc,
   update->rowPitch = mappedRes.RowPitch;
   update->slicePitch = mappedRes.DepthPitch;
   update->data = static_cast<uint8_t*>(mappedRes.pData);
+  ctx->Release();
   return true;
 }
 

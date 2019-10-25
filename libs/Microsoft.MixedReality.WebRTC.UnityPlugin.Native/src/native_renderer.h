@@ -9,7 +9,7 @@
 
 #include "render_api.h"
 
-struct I420AVideoFrame {
+struct I420VideoFrame {
   int width{0};
   int height{0};
   int ystride{0};
@@ -70,8 +70,9 @@ class NativeRenderer {
   void* m_peerHandle{nullptr};
   std::vector<TextureDesc> m_remoteTextures;
   VideoKind m_remoteVideoFormat{VideoKind::kNone};
-  // REVIEW: Should we keep a frame queue?
-  I420AVideoFrame m_I420RemoteVideoFrame{};
+  std::shared_ptr<I420VideoFrame> m_nextI420RemoteVideoFrame;
+  // REVIEW: Free frames could be kept in a global queue.
+  std::vector<std::shared_ptr<I420VideoFrame>> m_freeI420VideoFrames;
   
   NativeRenderer(PeerConnectionHandle peerHandle);
   void Shutdown();

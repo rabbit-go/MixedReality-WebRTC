@@ -52,6 +52,7 @@ mrsResult MRS_CALL
 mrsNativeRendererDestroy(NativeRendererHandle* handlePtr) noexcept {
   NativeRenderer::Destroy(*handlePtr);
   *handlePtr = nullptr;
+  _CrtDumpMemoryLeaks();
   return MRS_SUCCESS;
 }
 

@@ -25,14 +25,14 @@ static std::vector<int> g_freeSlots;
 static std::shared_ptr<RenderApi> g_renderApi;
 static std::vector<NativeRendererHandle> g_videoUpdateQueue;
 
-void I420AVideoFrame::CopyFrame(const void* yptr,
-                                const void* uptr,
-                                const void* vptr,
-                                const int ystride_,
-                                const int ustride_,
-                                const int vstride_,
-                                const int width_,
-                                const int height_) {
+void I420VideoFrame::CopyFrame(const void* yptr,
+                               const void* uptr,
+                               const void* vptr,
+                               const int ystride_,
+                               const int ustride_,
+                               const int vstride_,
+                               const int width_,
+                               const int height_) {
   width = width_;
   height = height_;
   ystride = ystride_;
@@ -155,16 +155,20 @@ std::vector<std::shared_ptr<NativeRenderer>> NativeRenderer::MultiGet(
 NativeRenderer::NativeRenderer(PeerConnectionHandle peerHandle)
     : m_peerHandle(peerHandle), m_handle(nullptr) {}
 
-NativeRenderer::~NativeRenderer() {}
+NativeRenderer::~NativeRenderer() {
+  Log_Debug("NativeRenderer::~NativeRenderer");
+}
 
 void NativeRenderer::Shutdown() {
-  Log_Debug("UnregisterRemoteTextures");
+  Log_Debug("NativeRenderer::Shutdown");
   UnregisterRemoteTextures();
 }
 
 void NativeRenderer::RegisterRemoteTextures(VideoKind format,
                                             TextureDesc textDescs[],
                                             int textureCount) {
+  Log_Debug("NativeRenderer::RegisterRemoteTextures: %p, %p, %p",
+            textDescs[0].texture, textDescs[1].texture, textDescs[2].texture);
   // Instance lock
   std::lock_guard guard(m_lock);
   m_remoteVideoFormat = format;
@@ -178,15 +182,13 @@ void NativeRenderer::RegisterRemoteTextures(VideoKind format,
         mrsPeerConnectionRegisterI420RemoteVideoFrameCallback(
             m_peerHandle, NativeRenderer::I420RemoteVideoFrameCallback,
             m_handle);
-
-        Log_Debug("RegisterRemoteTextures: %p, %p, %p", textDescs[0].texture,
-                  textDescs[1].texture, textDescs[2].texture);
       }
       break;
   }
 }
 
 void NativeRenderer::UnregisterRemoteTextures() {
+  Log_Debug("NativeRenderer::UnregisterRemoteTextures");
   {
     // Instance lock
     std::lock_guard guard(m_lock);
@@ -217,10 +219,21 @@ void NativeRenderer::I420RemoteVideoFrameCallback(void* user_data,
     {
       // Instance lock
       std::lock_guard guard(renderer->m_lock);
-      renderer->m_I420RemoteVideoFrame.CopyFrame(yptr, uptr, vptr, ystride,
-                                                 ustride, vstride, frame_width,
-                                                 frame_height);
+      if (renderer->m_nextI420RemoteVideoFrame == nullptr) {
+        if (renderer->m_freeI420VideoFrames.size()) {
+          renderer->m_nextI420RemoteVideoFrame =
+              renderer->m_freeI420VideoFrames.back();
+          renderer->m_freeI420VideoFrames.pop_back();
+        } else {
+          renderer->m_nextI420RemoteVideoFrame =
+              std::make_shared<I420VideoFrame>();
+        }
+      }
+      renderer->m_nextI420RemoteVideoFrame->CopyFrame(
+          yptr, uptr, vptr, ystride, ustride, vstride, frame_width,
+          frame_height);
     }
+
     // Register for the next video update.
     {
       // Global lock
@@ -261,23 +274,30 @@ void MRS_CALL NativeRenderer::DoVideoUpdate() {
       continue;
 
     std::vector<TextureDesc> textures;
-    I420AVideoFrame remoteI420Frame;
+    std::shared_ptr<I420VideoFrame> remoteI420Frame;
     {
       // Instance lock
       std::lock_guard guard(renderer->m_lock);
       // Copy the remote textures and current video frame.
       textures = renderer->m_remoteTextures;
-      remoteI420Frame = renderer->m_I420RemoteVideoFrame;
+      remoteI420Frame = renderer->m_nextI420RemoteVideoFrame;
+      renderer->m_nextI420RemoteVideoFrame = nullptr;
     }
+
+    if (textures.size() < 3)
+      continue;
+
+    if (!remoteI420Frame)
+      continue;
 
 #if 0
     // Validate the frame has real data, changing over time.
     uint64_t yhash = 0, uhash = 0, vhash = 0;
-    for (auto value : remoteI420Frame.ybuffer)
+    for (auto value : remoteI420Frame->ybuffer)
       yhash += value;
-    for (auto value : remoteI420Frame.ubuffer)
+    for (auto value : remoteI420Frame->ubuffer)
       uhash += value;
-    for (auto value : remoteI420Frame.vbuffer)
+    for (auto value : remoteI420Frame->vbuffer)
       vhash += value;
     Log_Debug("yhash: %llx, uhash: %llx, vhash: %llx", yhash, uhash, vhash);
 #endif
@@ -285,19 +305,21 @@ void MRS_CALL NativeRenderer::DoVideoUpdate() {
     {
       int index = 0;
       for (const TextureDesc& textureDesc : textures) {
-#if 0
-        const std::vector<uint8_t>& src = remoteI420Frame.GetBuffer(index);
+#if 1
+        const std::vector<uint8_t>& src = remoteI420Frame->GetBuffer(index);
         g_renderApi->SimpleUpdateTexture(textureDesc.texture, textureDesc.width,
                                          textureDesc.height, src.data(),
                                          src.size());
 #else
+        // WARNING!!! There is an egregious memory leak somewhere in this code
+        // block. I suspect it is in the render API.
         VideoDesc videoDesc = {VideoFormat::R8, (uint32_t)textureDesc.width,
                                (uint32_t)textureDesc.height};
         RenderApi::TextureUpdate update;
         if (g_renderApi->BeginModifyTexture(videoDesc, &update)) {
           int copyPitch = std::min<int>(videoDesc.width, update.rowPitch);
           uint8_t* dst = static_cast<uint8_t*>(update.data);
-          const uint8_t* src = remoteI420Frame.GetBuffer(index).data();
+          const uint8_t* src = remoteI420Frame->GetBuffer(index).data();
           for (int32_t r = 0; r < textureDesc.height; ++r) {
             memcpy(dst, src, copyPitch);
             dst += update.rowPitch;
@@ -308,6 +330,13 @@ void MRS_CALL NativeRenderer::DoVideoUpdate() {
 #endif
         ++index;
       }
+    }
+
+    // Recycle the frame
+    {
+      // Instance lock
+      std::lock_guard guard(renderer->m_lock);
+      renderer->m_freeI420VideoFrames.push_back(remoteI420Frame);
     }
   }
 }
