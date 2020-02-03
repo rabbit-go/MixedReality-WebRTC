@@ -25,12 +25,16 @@
 #define NOMINMAX
 #endif
 
+#define MRS_NODISCARD [[nodiscard]]
+
 #include <windows.h>
 
 #elif defined(MR_SHARING_ANDROID)
 
 #define WEBRTC_POSIX 1
 #define WEBRTC_ANDROID 1
+
+#define MRS_NODISCARD
 
 #endif
 
@@ -41,7 +45,6 @@
 #pragma warning(disable : 4244)
 
 // Core WebRTC
-#include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/datachannelinterface.h"

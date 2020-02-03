@@ -11,6 +11,7 @@
 #include "peer_connection.h"
 #include "sdp_utils.h"
 #include "video_frame_observer.h"
+#include "sdp_utils.h"
 
 // Internal
 #include "interop/global_factory.h"
@@ -995,7 +996,7 @@ bool PeerConnectionImpl::SetRemoteDescription(const char* type,
     }
   }
   std::string sdp_type_str(type);
-  auto sdp_type = webrtc::SdpTypeFromString(sdp_type_str);
+  auto sdp_type = SdpTypeFromString(sdp_type_str);
   if (!sdp_type.has_value())
     return false;
   std::string remote_desc(sdp);
