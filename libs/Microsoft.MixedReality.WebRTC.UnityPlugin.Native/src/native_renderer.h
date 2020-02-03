@@ -9,6 +9,8 @@
 
 #include "render_api.h"
 
+using mrsI420AVideoFrame = Microsoft::MixedReality::WebRTC::I420AVideoFrame;
+
 struct I420VideoFrame {
   int width{0};
   int height{0};
@@ -19,14 +21,7 @@ struct I420VideoFrame {
   std::vector<uint8_t> ubuffer;
   std::vector<uint8_t> vbuffer;
 
-  void CopyFrame(const void* yptr,
-                 const void* uptr,
-                 const void* vptr,
-                 const int ystride,
-                 const int ustride,
-                 const int vstride,
-                 const int width,
-                 const int height);
+  void CopyFrame(const mrsI420AVideoFrame& frame);
 
   const std::vector<uint8_t>& GetBuffer(int i) {
     switch (i) {
@@ -77,15 +72,7 @@ class NativeRenderer {
   NativeRenderer(PeerConnectionHandle peerHandle);
   void Shutdown();
 
-  static void MRS_CALL I420RemoteVideoFrameCallback(void* user_data,
-                                                    const void* yptr,
-                                                    const void* uptr,
-                                                    const void* vptr,
-                                                    const void* aptr,
-                                                    const int ystride,
-                                                    const int ustride,
-                                                    const int vstride,
-                                                    const int astride,
-                                                    const int frame_width,
-                                                    const int frame_height);
+  static void MRS_CALL
+  I420ARemoteVideoFrameCallback(void* user_data,
+                                const mrsI420AVideoFrame& frame);
 };

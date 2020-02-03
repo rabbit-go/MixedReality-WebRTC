@@ -4,30 +4,16 @@
 
 #pragma once
 
-#include "../../Microsoft.MixedReality.WebRTC.Native/include/api.h"
-#include "./Unity/IUnityGraphics.h"
-#include "./Unity/IUnityInterface.h"
+#include "../../Microsoft.MixedReality.WebRTC.Native/include/export.h"
+#include "../../Microsoft.MixedReality.WebRTC.Native/include/mrs_errors.h"
+#include "../../Microsoft.MixedReality.WebRTC.Native/include/video_frame.h"
 
 extern "C" {
 
-//
-// Unity
-//
+using mrsResult = Microsoft::MixedReality::WebRTC::Result;
 
-UNITY_INTERFACE_EXPORT void UNITY_INTERFACE_API
-OnGraphicsDeviceEvent(UnityGfxDeviceEventType eventType);
-
-UNITY_INTERFACE_EXPORT void UNITY_INTERFACE_API
-UnityPluginLoad(IUnityInterfaces* unityInterfaces);
-
-UNITY_INTERFACE_EXPORT void UNITY_INTERFACE_API UnityPluginUnload();
-
-//
-// Errors
-//
-
-// Native rendering (0x400)
-constexpr const mrsResult MRS_E_INVALID_NATIVE_RENDERER_HANDLE{0x80000401};
+/// Opaque handle to a native PeerConnection C++ object.
+using PeerConnectionHandle = void*;
 
 //
 // Native rendering
@@ -70,7 +56,6 @@ mrsNativeRendererUnregisterRemoteTextures(NativeRendererHandle handle) noexcept;
 
 MRS_API VideoRenderMethod MRS_CALL
 mrsNativeRendererGetVideoUpdateMethod() noexcept;
-}
 
 //
 // Utils
@@ -81,3 +66,4 @@ typedef void (*LogFunction)(const char*);
 MRS_API void MRS_CALL mrsSetLoggingFunctions(LogFunction logDebugFunc,
                                              LogFunction logErrorFunc,
                                              LogFunction logWarningFunc);
+}

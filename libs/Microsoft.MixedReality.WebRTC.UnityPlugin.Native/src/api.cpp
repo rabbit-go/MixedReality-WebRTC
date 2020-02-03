@@ -5,39 +5,42 @@
 // This is a precompiled header, it must be on its own, followed by a blank
 // line, to prevent clang-format from reordering it with other headers.
 #include "pch.h"
-
 #include "api.h"
 #include "native_renderer.h"
 #include "log_helpers.h"
-
-// Globals
-static IUnityInterfaces* s_UnityInterfaces = nullptr;
-static IUnityGraphics* s_Graphics = nullptr;
+#include "./Unity/IUnityGraphics.h"
+#include "./Unity/IUnityInterface.h"
 
 //
 // Unity
 //
 
-void UNITY_INTERFACE_API
+static IUnityInterfaces* s_UnityInterfaces = nullptr;
+static IUnityGraphics* s_Graphics = nullptr;
+
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 OnGraphicsDeviceEvent(UnityGfxDeviceEventType eventType) {
   NativeRenderer::OnGraphicsDeviceEvent(eventType, s_Graphics->GetRenderer(),
                                         s_UnityInterfaces);
 }
 
-void UNITY_INTERFACE_API UnityPluginLoad(IUnityInterfaces* unityInterfaces) {
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+UnityPluginLoad(IUnityInterfaces* unityInterfaces) {
   s_UnityInterfaces = unityInterfaces;
   s_Graphics = s_UnityInterfaces->Get<IUnityGraphics>();
   s_Graphics->RegisterDeviceEventCallback(OnGraphicsDeviceEvent);
   OnGraphicsDeviceEvent(kUnityGfxDeviceEventInitialize);
 }
 
-void UNITY_INTERFACE_API UnityPluginUnload() {
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload() {
   s_Graphics->UnregisterDeviceEventCallback(OnGraphicsDeviceEvent);
 }
 
 //
-// NativeRenderer
+// NativeRenderer API
 //
+
+using namespace Microsoft::MixedReality::WebRTC;
 
 mrsResult MRS_CALL
 mrsNativeRendererCreate(PeerConnectionHandle peerHandle,
@@ -45,7 +48,7 @@ mrsNativeRendererCreate(PeerConnectionHandle peerHandle,
   // REVIEW: Should we use std::shared_ptr here?
   *handleOut = nullptr;
   *handleOut = NativeRenderer::Create(peerHandle);
-  return MRS_SUCCESS;
+  return Result::kSuccess;
 }
 
 mrsResult MRS_CALL
@@ -53,7 +56,7 @@ mrsNativeRendererDestroy(NativeRendererHandle* handlePtr) noexcept {
   NativeRenderer::Destroy(*handlePtr);
   *handlePtr = nullptr;
   _CrtDumpMemoryLeaks();
-  return MRS_SUCCESS;
+  return Result::kSuccess;
 }
 
 mrsResult MRS_CALL
@@ -64,7 +67,7 @@ mrsNativeRendererRegisterRemoteTextures(NativeRendererHandle handle,
   if (auto renderer = NativeRenderer::Get(handle)) {
     renderer->RegisterRemoteTextures(format, textures, textureCount);
   }
-  return MRS_SUCCESS;
+  return Result::kSuccess;
 }
 
 mrsResult MRS_CALL mrsNativeRendererUnregisterRemoteTextures(
@@ -72,7 +75,7 @@ mrsResult MRS_CALL mrsNativeRendererUnregisterRemoteTextures(
   if (auto renderer = NativeRenderer::Get(handle)) {
     renderer->UnregisterRemoteTextures();
   }
-  return MRS_SUCCESS;
+  return Result::kSuccess;
 }
 
 VideoRenderMethod MRS_CALL mrsNativeRendererGetVideoUpdateMethod() noexcept {

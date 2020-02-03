@@ -130,7 +130,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <ModuleDefinitionFile>..\exports.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
       <AdditionalDependencies>
       </AdditionalDependencies>
     </Link>
@@ -143,6 +143,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
@@ -176,6 +177,7 @@
     <ClInclude Include="..\..\include\api.h" />
     <ClInclude Include="..\log_helpers.h" />
     <ClInclude Include="..\native_renderer.h" />
+    <ClInclude Include="..\handle_pool.h" />
     <ClInclude Include="..\pch.h" />
     <ClInclude Include="..\render_api.h" />
     <ClInclude Include="..\targetver.h" />
@@ -188,7 +190,7 @@
     <ClInclude Include="..\video_types.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="../exports.def" />
+    <None Include="exports.def" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

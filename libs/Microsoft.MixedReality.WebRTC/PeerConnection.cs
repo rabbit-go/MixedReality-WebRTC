@@ -588,7 +588,7 @@ namespace Microsoft.MixedReality.WebRTC
         /// <summary>
         /// Accessor for the native peer connection handle.
         /// </summary>
-        public IntPtr NativeHandle => _nativePeerhandle;
+        public PeerConnectionHandle NativeHandle => _nativePeerhandle;
 
         /// <summary>
         /// Indicates whether the peer connection is established and can exchange some

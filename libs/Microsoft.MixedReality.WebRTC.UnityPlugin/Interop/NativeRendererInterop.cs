@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Microsoft.MixedReality.WebRTC.Interop;
 
 namespace Microsoft.MixedReality.WebRTC.UnityPlugin.Interop
 {
@@ -15,7 +16,7 @@ namespace Microsoft.MixedReality.WebRTC.UnityPlugin.Interop
 
         [DllImport(Utils.dllPath, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
             EntryPoint = "mrsNativeRendererCreate")]
-        public static extern uint NativeRenderer_Create(IntPtr peerConnectionHandle, out IntPtr nativeRendererHandlePtr);
+        public static extern uint NativeRenderer_Create(PeerConnectionHandle peerConnectionHandle, out IntPtr nativeRendererHandlePtr);
 
         [DllImport(Utils.dllPath, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
             EntryPoint = "mrsNativeRendererDestroy")]
@@ -34,7 +35,7 @@ namespace Microsoft.MixedReality.WebRTC.UnityPlugin.Interop
         public static extern IntPtr NativeRenderer_GetVideoUpdateMethod();
 
         [DllImport(Utils.dllPath, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
-    EntryPoint = "mrsSetLoggingFunctions")]
-        public static extern IntPtr NativeRenderer_SetLoggingFunctions(LogCallback logDebugCallback, LogCallback logErrorCallback, LogCallback logWarningCallback);
+            EntryPoint = "mrsSetLoggingFunctions")]
+        public static extern void NativeRenderer_SetLoggingFunctions(LogCallback logDebugCallback, LogCallback logErrorCallback, LogCallback logWarningCallback);
     }
 }

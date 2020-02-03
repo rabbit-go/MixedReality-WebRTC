@@ -40,9 +40,7 @@
       <Filter>Unity</Filter>
     </ClInclude>
     <ClInclude Include="..\log_helpers.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="../exports.def" />
+    <ClInclude Include="..\handle_pool.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="interop">
@@ -51,5 +49,8 @@
     <Filter Include="Unity">
       <UniqueIdentifier>{477bfa31-74b1-47c7-a5c7-f4fc886eaabe}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="exports.def" />
   </ItemGroup>
 </Project>

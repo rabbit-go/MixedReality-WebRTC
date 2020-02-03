@@ -5,8 +5,21 @@
 #include "pch.h"
 
 #include "api.h"
+#include "handle_pool.h"
 #include "log_helpers.h"
 #include "native_renderer.h"
+
+/// Callback fired when a local or remote (depending on use) video frame is
+/// available to be consumed by the caller, usually for display.
+/// The video frame is encoded in I420 triplanar format (NV12).
+using PeerConnectionI420AVideoFrameCallback =
+    void(MRS_CALL*)(void* user_data, const mrsI420AVideoFrame& frame);
+
+extern "C" MRS_API void MRS_CALL
+mrsPeerConnectionRegisterI420ARemoteVideoFrameCallback(
+    PeerConnectionHandle peerHandle,
+    PeerConnectionI420AVideoFrameCallback callback,
+    void* user_data) noexcept;
 
 #pragma warning(disable : 4302 4311 4312)
 
@@ -19,102 +32,56 @@
 //  3. m_lock -- Local lock (instance-level)
 
 static std::mutex g_lock;
-static std::vector<std::shared_ptr<NativeRenderer>> g_instances;
-static std::vector<int> g_generations;
-static std::vector<int> g_freeSlots;
+static HandlePool<NativeRenderer> g_renderHandlePool;
 static std::shared_ptr<RenderApi> g_renderApi;
 static std::vector<NativeRendererHandle> g_videoUpdateQueue;
 
-void I420VideoFrame::CopyFrame(const void* yptr,
-                               const void* uptr,
-                               const void* vptr,
-                               const int ystride_,
-                               const int ustride_,
-                               const int vstride_,
-                               const int width_,
-                               const int height_) {
-  width = width_;
-  height = height_;
-  ystride = ystride_;
-  ustride = ustride_;
-  vstride = vstride_;
+void I420VideoFrame::CopyFrame(const mrsI420AVideoFrame& frame) {
+  width = frame.width_;
+  height = frame.height_;
+  ystride = frame.ystride_;
+  ustride = frame.ustride_;
+  vstride = frame.vstride_;
   size_t ysize = (size_t)ystride * height;
   size_t usize = (size_t)ustride * height / 2;
   size_t vsize = (size_t)vstride * height / 2;
   ybuffer.resize(ysize);
   ubuffer.resize(usize);
   vbuffer.resize(vsize);
-  memcpy(ybuffer.data(), yptr, ysize);
-  memcpy(ubuffer.data(), uptr, usize);
-  memcpy(vbuffer.data(), vptr, vsize);
-#if 0
-  // Validate the frame has real data, changing over time.
-  uint64_t yhash = 0, uhash = 0, vhash = 0;
-  for (auto value : ybuffer)
-    yhash += value;
-  for (auto value : ubuffer)
-    uhash += value;
-  for (auto value : vbuffer)
-    vhash += value;
-  Log_Debug("yhash: %llx, uhash: %llx, vhash: %llx", yhash, uhash, vhash);
-#endif
+  memcpy(ybuffer.data(), frame.ydata_, ysize);
+  memcpy(ubuffer.data(), frame.udata_, usize);
+  memcpy(vbuffer.data(), frame.vdata_, vsize);
 }
 
 NativeRendererHandle NativeRenderer::Create(PeerConnectionHandle peerHandle) {
   auto renderer =
       std::shared_ptr<NativeRenderer>(new NativeRenderer(peerHandle));
   {
-    // Handle format is:
-    //  High 16 bits: generation
-    //  Low 16 bits : slot
+    {
+      // Global lock
+      std::lock_guard guard(g_lock);
 
-    // Global lock
-    std::lock_guard guard(g_lock);
-    if (g_instances.size() >= 0x10000 && g_freeSlots.size() == 0) {
-      return nullptr;
+      auto handle = g_renderHandlePool.bind(renderer);
+
+      if (handle == nullptr) {
+        return nullptr;
+      }
+
+      renderer->m_handle = handle;
+      return handle;
     }
-    int slot;
-    if (g_freeSlots.size()) {
-      // Use a free slot.
-      slot = g_freeSlots.back();
-      g_freeSlots.pop_back();
-    } else {
-      // Allocate a new slot.
-      slot = (int)g_instances.size();
-      g_instances.resize(g_instances.size() + 1);
-    }
-    slot &= 0xffff;
-    // Increment the generation of this slot. This is a guard against stale
-    // handles pointing to newer instances occupying a recycled slot.
-    g_generations.resize(g_instances.size());
-    g_generations[slot] = (g_generations[slot] + 1) & 0xffff;
-    // Generation cannot be zero.
-    if (!g_generations[slot]) {
-      g_generations[slot]++;
-    }
-    int gen = g_generations[slot];
-    NativeRendererHandle handle = (NativeRendererHandle)((gen << 16) | slot);
-    renderer->m_handle = handle;
-    g_instances[slot] = renderer;
-    return handle;
   }
 }
 
 void NativeRenderer::Destroy(NativeRendererHandle handle) {
   std::shared_ptr<NativeRenderer> renderer;
+
   {
     // Global lock
     std::lock_guard guard(g_lock);
-    int slot = (int)handle & 0xffff;
-    int gen = ((int)handle >> 16) & 0xffff;
-    if (g_generations.size() > slot && g_generations[slot] == gen) {
-      renderer = g_instances[slot];
-      // Clear the shared_ptr holding a reference to the NativeRenderer. Once
-      // all other references go away, the object will be deleted.
-      g_instances[slot] = nullptr;
-      g_freeSlots.push_back(slot);
-    }
+    renderer = g_renderHandlePool.unbind(handle);
   }
+
   if (renderer) {
     renderer->Shutdown();
   }
@@ -123,14 +90,9 @@ void NativeRenderer::Destroy(NativeRendererHandle handle) {
 std::shared_ptr<NativeRenderer> NativeRenderer::Get(
     NativeRendererHandle handle) {
   {
+    // Global lock
     std::lock_guard guard(g_lock);
-    int slot = (int)handle & 0xffff;
-    int gen = ((int)handle >> 16) & 0xffff;
-    if (g_generations.size() > slot && g_generations[slot] == gen) {
-      return g_instances[slot];
-    } else {
-      return nullptr;
-    }
+    return g_renderHandlePool.get(handle);
   }
 }
 
@@ -138,14 +100,11 @@ std::vector<std::shared_ptr<NativeRenderer>> NativeRenderer::MultiGet(
     const std::vector<NativeRendererHandle>& handles) {
   std::vector<std::shared_ptr<NativeRenderer>> renderers;
   {
-    std::lock_guard guard(g_lock);
-    for (auto handle : handles) {
-      int slot = (int)handle & 0xffff;
-      int gen = ((int)handle >> 16) & 0xffff;
-      if (g_generations.size() > slot && g_generations[slot] == gen) {
-        renderers.push_back(g_instances[slot]);
-      } else {
-        renderers.push_back(nullptr);
+    {
+      // Global lock
+      std::lock_guard guard(g_lock);
+      for (auto handle : handles) {
+        renderers.push_back(g_renderHandlePool.get(handle));
       }
     }
   }
@@ -169,48 +128,41 @@ void NativeRenderer::RegisterRemoteTextures(VideoKind format,
                                             int textureCount) {
   Log_Debug("NativeRenderer::RegisterRemoteTextures: %p, %p, %p",
             textDescs[0].texture, textDescs[1].texture, textDescs[2].texture);
-  // Instance lock
-  std::lock_guard guard(m_lock);
-  m_remoteVideoFormat = format;
-  switch (format) {
-    case VideoKind::kI420:
-      if (textureCount == 3) {
-        m_remoteTextures.resize(3);
-        m_remoteTextures[0] = textDescs[0];
-        m_remoteTextures[1] = textDescs[1];
-        m_remoteTextures[2] = textDescs[2];
-        mrsPeerConnectionRegisterI420RemoteVideoFrameCallback(
-            m_peerHandle, NativeRenderer::I420RemoteVideoFrameCallback,
-            m_handle);
-      }
-      break;
+  {
+    // Instance lock
+    std::lock_guard guard(m_lock);
+    m_remoteVideoFormat = format;
+    switch (format) {
+      case VideoKind::kI420:
+        if (textureCount == 3) {
+          m_remoteTextures.resize(3);
+          m_remoteTextures[0] = textDescs[0];
+          m_remoteTextures[1] = textDescs[1];
+          m_remoteTextures[2] = textDescs[2];
+          mrsPeerConnectionRegisterI420ARemoteVideoFrameCallback(
+              m_peerHandle, NativeRenderer::I420ARemoteVideoFrameCallback,
+              m_handle);
+        }
+        break;
+    }
   }
 }
 
 void NativeRenderer::UnregisterRemoteTextures() {
   Log_Debug("NativeRenderer::UnregisterRemoteTextures");
   {
-    // Instance lock
-    std::lock_guard guard(m_lock);
-    m_remoteTextures.clear();
-    m_remoteVideoFormat = VideoKind::kNone;
+    {
+      // Instance lock
+      std::lock_guard guard(m_lock);
+      m_remoteTextures.clear();
+      m_remoteVideoFormat = VideoKind::kNone;
+    }
   }
 }
 
-void NativeRenderer::I420RemoteVideoFrameCallback(void* user_data,
-                                                  const void* yptr,
-                                                  const void* uptr,
-                                                  const void* vptr,
-                                                  const void* aptr,
-                                                  const int ystride,
-                                                  const int ustride,
-                                                  const int vstride,
-                                                  const int astride,
-                                                  const int frame_width,
-                                                  const int frame_height) {
-  UNREFERENCED_PARAMETER(aptr);
-  UNREFERENCED_PARAMETER(astride);
-
+void NativeRenderer::I420ARemoteVideoFrameCallback(
+    void* user_data,
+    const mrsI420AVideoFrame& frame) {
   if (auto renderer = NativeRenderer::Get(user_data)) {
     // TODO: Do we need to keep a frame queue or is it fine to just render the
     // most recent frame?
@@ -229,9 +181,7 @@ void NativeRenderer::I420RemoteVideoFrameCallback(void* user_data,
               std::make_shared<I420VideoFrame>();
         }
       }
-      renderer->m_nextI420RemoteVideoFrame->CopyFrame(
-          yptr, uptr, vptr, ystride, ustride, vstride, frame_width,
-          frame_height);
+      renderer->m_nextI420RemoteVideoFrame->CopyFrame(frame);
     }
 
     // Register for the next video update.
