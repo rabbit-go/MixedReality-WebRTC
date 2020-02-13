@@ -57,12 +57,3 @@ xdoc.meta
 
 # TODO - TestNetCoreConsole is misconfigured, builds into its own folder
 examples/TestNetCoreConsole/bin
-
-# CMake
-CMakefiles/
-
-# Android Studio
-.idea/
-
-# Android webrtc generated files
-android/deps/

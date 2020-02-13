@@ -1,2 +1,2 @@
-include ':WebRTC-Native'
+include ':app'
 rootProject.name='MixedReality-WebRTC'

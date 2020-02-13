@@ -29,6 +29,8 @@ add_library(
         STATIC IMPORTED
 )
 
+# TODO: Use environment variable for path to libwebrtc headers
+
 # See BUILD.md for instructions to build libwebrtc_full.a
 set_target_properties(
         libwebrtc-full-a
