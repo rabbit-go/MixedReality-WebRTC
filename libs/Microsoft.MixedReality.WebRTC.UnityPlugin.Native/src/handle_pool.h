@@ -61,7 +61,8 @@ void* HandlePool<ObjT>::bind(std::shared_ptr<ObjT> obj) noexcept {
     ++m_generations[slot];
   }
   short gen = m_generations[slot];
-  void* handle = (void*)((gen << 16) | slot);
+  intptr_t handleVal = ((gen << 16) | slot);
+  void* handle = (void*)handleVal;
 
   return handle;
 }

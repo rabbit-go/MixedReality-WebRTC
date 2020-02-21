@@ -24,7 +24,7 @@ set_target_properties(
 )
 
 #---------------------------------------------------------------------
-# Configure Microsoft.MixedReality.WebRTC.Native.so build.
+# Configure Microsoft.MixedReality.WebRTC.Native.so.
 #
 
 # Base path to Microsoft.MixedReality.WebRTC.Native project.

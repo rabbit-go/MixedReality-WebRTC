@@ -5,7 +5,7 @@
 // This is a precompiled header, it must be on its own, followed by a blank
 // line, to prevent clang-format from reordering it with other headers.
 #include "pch.h"
-#include "api.h"
+#include "../include/api.h"
 #include "native_renderer.h"
 #include "log_helpers.h"
 #include "./Unity/IUnityGraphics.h"
@@ -55,7 +55,9 @@ mrsResult MRS_CALL
 mrsNativeRendererDestroy(NativeRendererHandle* handlePtr) noexcept {
   NativeRenderer::Destroy(*handlePtr);
   *handlePtr = nullptr;
+#ifdef WIN32
   _CrtDumpMemoryLeaks();
+#endif
   return Result::kSuccess;
 }
 

@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-#include "export.h"
+#include "../include/export.h"
 
 namespace Microsoft::MixedReality::WebRTC {
 

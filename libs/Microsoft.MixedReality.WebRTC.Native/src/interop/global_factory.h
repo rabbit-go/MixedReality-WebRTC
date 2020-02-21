@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "export.h"
+#include "../include/export.h"
 #include "peer_connection.h"
 
 namespace Microsoft::MixedReality::WebRTC {

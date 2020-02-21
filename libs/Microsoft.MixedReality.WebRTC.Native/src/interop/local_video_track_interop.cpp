@@ -5,7 +5,7 @@
 // line, to prevent clang-format from reordering it with other headers.
 #include "pch.h"
 
-#include "local_video_track_interop.h"
+#include "../include/local_video_track_interop.h"
 #include "media/local_video_track.h"
 
 using namespace Microsoft::MixedReality::WebRTC;

@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "../../Microsoft.MixedReality.WebRTC.Native/include/export.h"
-#include "../../Microsoft.MixedReality.WebRTC.Native/include/mrs_errors.h"
-#include "../../Microsoft.MixedReality.WebRTC.Native/include/video_frame.h"
+#include "include/export.h"
+#include "src/mrs_errors.h"
+#include "include/video_frame.h"
 
 extern "C" {
 

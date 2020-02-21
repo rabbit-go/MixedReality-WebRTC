@@ -13,7 +13,7 @@
 #include "str.h"
 
 // Internal
-#include "interop_api.h"
+#include "../include/interop_api.h"
 
 namespace Microsoft::MixedReality::WebRTC {
 

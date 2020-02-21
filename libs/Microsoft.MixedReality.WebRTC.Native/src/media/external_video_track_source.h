@@ -6,8 +6,8 @@
 #include "mrs_errors.h"
 #include "refptr.h"
 #include "tracked_object.h"
-#include "video_frame.h"
-#include "external_video_track_source_interop.h"
+#include "../include/video_frame.h"
+#include "../include/external_video_track_source_interop.h"
 
 namespace Microsoft::MixedReality::WebRTC {
 

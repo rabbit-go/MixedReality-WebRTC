@@ -15,7 +15,7 @@
 
 // Internal
 #include "interop/global_factory.h"
-#include "interop_api.h"
+#include "../include/interop_api.h"
 
 #include <functional>
 

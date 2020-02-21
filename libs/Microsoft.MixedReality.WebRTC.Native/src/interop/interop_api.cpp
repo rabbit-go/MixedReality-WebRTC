@@ -8,10 +8,10 @@
 #include "api/stats/rtcstats_objects.h"
 
 #include "data_channel.h"
-#include "external_video_track_source_interop.h"
+#include "../include/external_video_track_source_interop.h"
 #include "interop/global_factory.h"
-#include "interop_api.h"
-#include "peer_connection_interop.h"
+#include "../include/interop_api.h"
+#include "../include/peer_connection_interop.h"
 #include "media/local_video_track.h"
 #include "media/external_video_track_source_impl.h"
 #include "peer_connection.h"

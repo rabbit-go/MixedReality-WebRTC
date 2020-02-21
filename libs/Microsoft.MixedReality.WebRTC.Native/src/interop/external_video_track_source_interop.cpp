@@ -7,7 +7,7 @@
 
 #include "callback.h"
 #include "media/external_video_track_source.h"
-#include "external_video_track_source_interop.h"
+#include "../include/external_video_track_source_interop.h"
 
 using namespace Microsoft::MixedReality::WebRTC;
 

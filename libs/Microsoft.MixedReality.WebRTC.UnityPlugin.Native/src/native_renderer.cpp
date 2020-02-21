@@ -4,7 +4,7 @@
 
 #include "pch.h"
 
-#include "api.h"
+#include "../include/api.h"
 #include "handle_pool.h"
 #include "log_helpers.h"
 #include "native_renderer.h"
@@ -144,6 +144,11 @@ void NativeRenderer::RegisterRemoteTextures(VideoKind format,
               m_handle);
         }
         break;
+
+      case VideoKind::kARGB:
+      case VideoKind::kNone:
+        // TODO
+        break;
     }
   }
 }
@@ -189,7 +194,7 @@ void NativeRenderer::I420ARemoteVideoFrameCallback(
       // Global lock
       std::lock_guard guard(g_lock);
       // Queue for texture render, unless already queued.
-      int slot = (int)renderer->m_handle & 0xffff;
+      intptr_t slot = (intptr_t)renderer->m_handle & 0xffff;
       if (g_videoUpdateQueue.size() <= slot) {
         g_videoUpdateQueue.resize((size_t)slot + 1);
       }
@@ -261,8 +266,8 @@ void MRS_CALL NativeRenderer::DoVideoUpdate() {
                                          textureDesc.height, src.data(),
                                          src.size());
 #else
-        // WARNING!!! There is an egregious memory leak somewhere in this code
-        // block. I suspect it is in the render API.
+        // WARNING!!! There is an egregious memory leak somewhere in
+        // this code block. I suspect it is in the render API.
         VideoDesc videoDesc = {VideoFormat::R8, (uint32_t)textureDesc.width,
                                (uint32_t)textureDesc.height};
         RenderApi::TextureUpdate update;
