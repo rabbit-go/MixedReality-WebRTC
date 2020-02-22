@@ -3,11 +3,11 @@
 
 #pragma once
 
+#include "../include/external_video_track_source_interop.h"
+#include "../include/video_frame.h"
 #include "mrs_errors.h"
 #include "refptr.h"
 #include "tracked_object.h"
-#include "../include/video_frame.h"
-#include "../include/external_video_track_source_interop.h"
 
 namespace Microsoft::MixedReality::WebRTC {
 
@@ -96,15 +96,15 @@ class ExternalVideoTrackSource : public TrackedObject {
   /// The caller must know the source expects an I420A frame; there is no check
   /// to confirm the source is I420A-based or ARGB32-based.
   virtual Result CompleteRequest(uint32_t request_id,
-                                         int64_t timestamp_ms,
-                                         const I420AVideoFrame& frame) = 0;
+                                 int64_t timestamp_ms,
+                                 const I420AVideoFrame& frame) = 0;
 
   /// Complete a given video frame request with the provided ARGB32 frame.
   /// The caller must know the source expects an ARGB32 frame; there is no check
   /// to confirm the source is I420A-based or ARGB32-based.
   virtual Result CompleteRequest(uint32_t request_id,
-                                         int64_t timestamp_ms,
-                                         const Argb32VideoFrame& frame) = 0;
+                                 int64_t timestamp_ms,
+                                 const Argb32VideoFrame& frame) = 0;
 
   /// Stop the video capture. This will stop producing video frames.
   virtual void StopCapture() = 0;
@@ -130,6 +130,6 @@ RefPtr<ExternalVideoTrackSource> ExternalVideoTrackSourceCreateFromI420A(
 RefPtr<ExternalVideoTrackSource> ExternalVideoTrackSourceCreateFromArgb32(
     mrsRequestExternalArgb32VideoFrameCallback callback,
     void* user_data);
-} // namespace detail
+}  // namespace detail
 
 }  // namespace Microsoft::MixedReality::WebRTC

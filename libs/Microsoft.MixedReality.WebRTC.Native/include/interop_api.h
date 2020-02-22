@@ -4,9 +4,9 @@
 #pragma once
 
 #include "audio_frame.h"
-#include "video_frame.h"
 #include "export.h"
 #include "result.h"
+#include "video_frame.h"
 
 extern "C" {
 
@@ -486,8 +486,8 @@ using mrsRequestExternalArgb32VideoFrameCallback =
 /// including generated or synthetic frames, for example for testing.
 /// The track source initially starts as capuring. Capture can be stopped with
 /// |mrsExternalVideoTrackSourceShutdown|.
-/// This returns a handle to a newly allocated object, which must be released once
-/// not used anymore with |mrsLocalVideoTrackRemoveRef()|.
+/// This returns a handle to a newly allocated object, which must be released
+/// once not used anymore with |mrsLocalVideoTrackRemoveRef()|.
 MRS_API mrsResult MRS_CALL
 mrsPeerConnectionAddLocalVideoTrackFromExternalSource(
     PeerConnectionHandle peerHandle,

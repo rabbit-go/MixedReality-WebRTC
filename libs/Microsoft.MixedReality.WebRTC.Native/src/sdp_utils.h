@@ -1,6 +1,5 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License. See LICENSE in the project root for license
-// information.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 #pragma once
 
@@ -55,9 +54,9 @@ std::string EncodeIceServers(const std::string& url,
                              const std::string& username,
                              const std::string& password);
 
-// Copied from src/pc/jsepsessiondescription.cc so that we don't rely on a binary
-// representation of absl::optional as per the Abseil Compatibility Guidelines:
-// https://abseil.io/about/compatibility
+// Copied from src/pc/jsepsessiondescription.cc so that we don't rely on a
+// binary representation of absl::optional as per the Abseil Compatibility
+// Guidelines: https://abseil.io/about/compatibility
 std::optional<webrtc::SdpType> SdpTypeFromString(const std::string& type_str);
 
 }  // namespace Microsoft::MixedReality::WebRTC

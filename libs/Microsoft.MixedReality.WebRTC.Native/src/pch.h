@@ -6,10 +6,10 @@
 #include <cassert>
 #include <cstdint>
 #include <functional>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <unordered_set>
-#include <mutex>
 
 #if defined(MR_SHARING_WIN)
 

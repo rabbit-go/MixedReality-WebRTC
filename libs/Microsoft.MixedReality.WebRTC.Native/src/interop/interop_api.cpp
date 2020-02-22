@@ -7,13 +7,13 @@
 
 #include "api/stats/rtcstats_objects.h"
 
-#include "data_channel.h"
 #include "../include/external_video_track_source_interop.h"
-#include "interop/global_factory.h"
 #include "../include/interop_api.h"
 #include "../include/peer_connection_interop.h"
-#include "media/local_video_track.h"
+#include "data_channel.h"
+#include "interop/global_factory.h"
 #include "media/external_video_track_source_impl.h"
+#include "media/local_video_track.h"
 #include "peer_connection.h"
 #include "sdp_utils.h"
 
@@ -1172,7 +1172,7 @@ T GetValueIfDefined(const webrtc::RTCStatsMember<T>& member) {
   return member.is_defined() ? *member : 0;
 }
 
-}
+}  // namespace
 
 mrsResult MRS_CALL
 mrsStatsReportGetObjects(mrsStatsReportHandle report_handle,
@@ -1286,7 +1286,8 @@ mrsStatsReportGetObjects(mrsStatsReportHandle report_handle,
             dest_stats.track_stats_timestamp_us = track_stats.timestamp_us();
             dest_stats.track_identifier = track_stats.track_identifier->c_str();
             dest_stats.frames_sent = GetValueIfDefined(track_stats.frames_sent);
-            dest_stats.huge_frames_sent = GetValueIfDefined(track_stats.huge_frames_sent);
+            dest_stats.huge_frames_sent =
+                GetValueIfDefined(track_stats.huge_frames_sent);
           }
         }
       }
@@ -1315,8 +1316,10 @@ mrsStatsReportGetObjects(mrsStatsReportHandle report_handle,
             auto& dest_stats = FindOrInsert(pending_stats, track_stats.id());
             dest_stats.track_stats_timestamp_us = track_stats.timestamp_us();
             dest_stats.track_identifier = track_stats.track_identifier->c_str();
-            dest_stats.frames_received = GetValueIfDefined(track_stats.frames_received);
-            dest_stats.frames_dropped = GetValueIfDefined(track_stats.frames_dropped);
+            dest_stats.frames_received =
+                GetValueIfDefined(track_stats.frames_received);
+            dest_stats.frames_dropped =
+                GetValueIfDefined(track_stats.frames_dropped);
           }
         }
       }
@@ -1338,8 +1341,7 @@ mrsStatsReportGetObjects(mrsStatsReportHandle report_handle,
   return Result::kSuccess;
 }
 
-mrsResult MRS_CALL
-mrsStatsReportRemoveRef(mrsStatsReportHandle stats_report) {
+mrsResult MRS_CALL mrsStatsReportRemoveRef(mrsStatsReportHandle stats_report) {
   if (auto rep = static_cast<const webrtc::RTCStatsReport*>(stats_report)) {
     rep->Release();
     return Result::kSuccess;

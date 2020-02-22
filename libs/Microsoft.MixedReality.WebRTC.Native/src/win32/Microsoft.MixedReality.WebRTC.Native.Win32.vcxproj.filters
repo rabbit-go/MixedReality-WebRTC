@@ -42,8 +42,6 @@
     <ClInclude Include="..\audio_frame_observer.h" />
     <ClInclude Include="..\callback.h" />
     <ClInclude Include="..\data_channel.h" />
-    <ClInclude Include="..\external_video_track_source.h" />
-    <ClInclude Include="..\local_video_track.h" />
     <ClInclude Include="..\mrs_errors.h" />
     <ClInclude Include="..\peer_connection.h" />
     <ClInclude Include="..\ref_counted_base.h" />

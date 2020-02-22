@@ -11,11 +11,10 @@
 #include "peer_connection.h"
 #include "sdp_utils.h"
 #include "video_frame_observer.h"
-#include "sdp_utils.h"
 
 // Internal
-#include "interop/global_factory.h"
 #include "../include/interop_api.h"
+#include "interop/global_factory.h"
 
 #include <functional>
 
@@ -1354,6 +1353,5 @@ ErrorOr<RefPtr<PeerConnection>> PeerConnection::create(
 void PeerConnection::GetStats(webrtc::RTCStatsCollectorCallback* callback) {
   ((PeerConnectionImpl*)this)->peer_->GetStats(callback);
 }
-
 
 }  // namespace Microsoft::MixedReality::WebRTC
