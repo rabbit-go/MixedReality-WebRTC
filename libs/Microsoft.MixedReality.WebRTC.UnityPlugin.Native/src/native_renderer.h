@@ -1,11 +1,11 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License. See LICENSE in the project root for license
-// information.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 #pragma once
 
+#include <map>
 #include <mutex>
-#include <vector>
+#include <set>
 
 #include "render_api.h"
 
@@ -40,19 +40,19 @@ struct I420VideoFrame {
 
 class NativeRenderer {
  public:
-  static NativeRendererHandle Create(PeerConnectionHandle peerHandle);
-  static void Destroy(NativeRendererHandle handle);
-  static std::shared_ptr<NativeRenderer> Get(NativeRendererHandle handle);
-  static std::vector<std::shared_ptr<NativeRenderer>> MultiGet(
-      const std::vector<NativeRendererHandle>& handles);
+  static void Create(PeerConnectionHandle peerHandle);
+  static void Destroy(PeerConnectionHandle peerHandle);
+  static std::shared_ptr<NativeRenderer> Get(PeerConnectionHandle peerHandle);
 
+  NativeRenderer(PeerConnectionHandle peerHandle);
   ~NativeRenderer();
 
-  NativeRendererHandle GetNativeHandle() const { return m_handle; }
-  void RegisterRemoteTextures(VideoKind format,
-                              TextureDesc textDescs[],
-                              int textureCount);
-  void UnregisterRemoteTextures();
+  PeerConnectionHandle Handle() const { return m_handle; }
+
+  void EnableRemoteVideo(VideoKind format,
+                         TextureDesc textureDescs[],
+                         int textureDescCount);
+  void DisableRemoteVideo();
 
   static void MRS_CALL DoVideoUpdate();
   static void OnGraphicsDeviceEvent(UnityGfxDeviceEventType eventType,
@@ -60,16 +60,23 @@ class NativeRenderer {
                                     IUnityInterfaces* unityInterfaces);
 
  private:
-  NativeRendererHandle m_handle;
+  static std::map<PeerConnectionHandle, std::shared_ptr<NativeRenderer>>
+      g_renderers;
+
+  static void DestroyUnsafe(PeerConnectionHandle peerHandle);
+  static std::shared_ptr<NativeRenderer> GetUnsafe(
+      PeerConnectionHandle peerHandle);
+  static std::vector<std::shared_ptr<NativeRenderer>> MultiGetUnsafe(
+      const std::set<PeerConnectionHandle>& peerHandles);
+
+  PeerConnectionHandle m_handle{nullptr};
   std::mutex m_lock;
-  void* m_peerHandle{nullptr};
   std::vector<TextureDesc> m_remoteTextures;
+  std::vector<TextureDesc> m_localTextures;
   VideoKind m_remoteVideoFormat{VideoKind::kNone};
+  VideoKind m_localVideoFormat{VideoKind::kNone};
   std::shared_ptr<I420VideoFrame> m_nextI420RemoteVideoFrame;
-  // REVIEW: Free frames could be kept in a global queue.
-  std::vector<std::shared_ptr<I420VideoFrame>> m_freeI420VideoFrames;
-  
-  NativeRenderer(PeerConnectionHandle peerHandle);
+
   void Shutdown();
 
   static void MRS_CALL

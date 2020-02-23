@@ -37,7 +37,6 @@
     <ClInclude Include="..\..\include\api.h">
       <Filter>interop</Filter>
     </ClInclude>
-    <ClInclude Include="..\handle_pool.h" />
     <ClInclude Include="..\log_helpers.h" />
     <ClInclude Include="..\native_renderer.h" />
     <ClInclude Include="..\render_api.h" />

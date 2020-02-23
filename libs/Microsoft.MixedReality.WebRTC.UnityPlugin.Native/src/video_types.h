@@ -1,11 +1,10 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License. See LICENSE in the project root for license
-// information.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 #pragma once
 
-#include <cstdint>
 #include <algorithm>
+#include <cstdint>
 
 enum class VideoFormat {
   R8,   // 1 plane: r. 8bits per pixel. Probably shouldn't be used directly as a
@@ -29,10 +28,7 @@ inline uint32_t GetBytesPerPixel(VideoFormat format) {
     case VideoFormat::BGRA8:
       return 4;
     default:
-      // Log_Error(
-      //    "GetBytesPerPixel called on multi-planar format. This really doesn't
-      //    " "make sense. Especially since multi-planar formats can't even be "
-      //    "represented in integer byte counts.");
+      // Log_Error("GetBytesPerPixel called on unsupported format.");
       return 0;
   }
 }

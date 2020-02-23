@@ -6,7 +6,7 @@ EXPORTS
 	UnityPluginUnload
 	mrsNativeRendererCreate
 	mrsNativeRendererDestroy
-	mrsNativeRendererRegisterRemoteTextures
-	mrsNativeRendererUnregisterRemoteTextures
+	mrsNativeRendererEnableRemoteVideo
+	mrsNativeRendererDisableRemoteVideo
 	mrsNativeRendererGetVideoUpdateMethod
 	mrsSetLoggingFunctions

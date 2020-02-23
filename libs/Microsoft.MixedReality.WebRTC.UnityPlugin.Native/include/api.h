@@ -1,12 +1,11 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License. See LICENSE in the project root for license
-// information.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
 #pragma once
 
 #include "include/export.h"
-#include "src/mrs_errors.h"
 #include "include/video_frame.h"
+#include "src/mrs_errors.h"
 
 extern "C" {
 
@@ -18,9 +17,6 @@ using PeerConnectionHandle = void*;
 //
 // Native rendering
 //
-
-/// Opaque handle to a native NativeRenderer C++ object.
-using NativeRendererHandle = void*;
 
 enum class VideoKind : int32_t {
   kNone = 0,
@@ -34,26 +30,29 @@ struct TextureDesc {
   int height{0};
 };
 
+/// Signature of rendering method called by Unity.
 typedef void(MRS_CALL* VideoRenderMethod)();
 
 /// Create a native renderer and return a handle to it.
 MRS_API mrsResult MRS_CALL
-mrsNativeRendererCreate(PeerConnectionHandle peerHandle,
-                        NativeRendererHandle* handleOut) noexcept;
+mrsNativeRendererCreate(PeerConnectionHandle peerHandle) noexcept;
 
-// Destroy a native renderer.
+/// Destroy a native renderer.
 MRS_API mrsResult MRS_CALL
-mrsNativeRendererDestroy(NativeRendererHandle* handlePtr) noexcept;
+mrsNativeRendererDestroy(PeerConnectionHandle peerHandle) noexcept;
 
+/// Register textures for remote video and start rendering it.
 MRS_API mrsResult MRS_CALL
-mrsNativeRendererRegisterRemoteTextures(NativeRendererHandle handle,
-                                        VideoKind format,
-                                        TextureDesc textures[],
-                                        int textureCount) noexcept;
+mrsNativeRendererEnableRemoteVideo(PeerConnectionHandle peerHandle,
+                                   VideoKind format,
+                                   TextureDesc textures[],
+                                   int textureCount) noexcept;
 
+/// Clear remote textures and stop rendering remote video.
 MRS_API mrsResult MRS_CALL
-mrsNativeRendererUnregisterRemoteTextures(NativeRendererHandle handle) noexcept;
+mrsNativeRendererDisableRemoteVideo(PeerConnectionHandle peerHandle) noexcept;
 
+/// Returns the rendering method called by Unity.
 MRS_API VideoRenderMethod MRS_CALL
 mrsNativeRendererGetVideoUpdateMethod() noexcept;
 
@@ -63,6 +62,7 @@ mrsNativeRendererGetVideoUpdateMethod() noexcept;
 
 typedef void (*LogFunction)(const char*);
 
+/// Pipe log entries to Unity's log.
 MRS_API void MRS_CALL mrsSetLoggingFunctions(LogFunction logDebugFunc,
                                              LogFunction logErrorFunc,
                                              LogFunction logWarningFunc);
