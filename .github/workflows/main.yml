@@ -16,6 +16,8 @@ jobs:
           shell: bash
         - name: CheckOut
           run: ./tools/build/libwebrtc/checkout.sh 
+          shell: bash
         - name: Build
           run: ./tools/build/libwebrtc/build.sh -c Release
+          shell: bash
         
