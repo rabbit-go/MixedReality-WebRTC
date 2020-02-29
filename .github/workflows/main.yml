@@ -8,6 +8,8 @@ jobs:
     steps:
       # use GitHub Actions
         - uses: actions/checkout@v2
+        - name: change Shell
+          shell: bash
         - name: ls
           run: dir
         - name: Move Directory
