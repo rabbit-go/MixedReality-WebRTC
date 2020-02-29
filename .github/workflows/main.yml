@@ -8,14 +8,13 @@ jobs:
     steps:
       # use GitHub Actions
         - uses: actions/checkout@v2
-        - name: change Shell
-          shell: bash
         - name: ls
           run: dir
         - name: Move Directory
           run: cd tools\build\libwebrtc\
         - name: Config
           run: ./config.sh -d /mnt/d/build_webrtc -b branch-heads/71 -t android -c arm64
+          shell: bash
         - name: CheckOut
           run: ./checkout.sh 
         - name: Build
