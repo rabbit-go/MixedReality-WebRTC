@@ -9,7 +9,8 @@ jobs:
       # use GitHub Actions
         - uses: actions/checkout@v2
         - name: ls
-          run: dir
+          run: ls
+          shell: bash
         - name: Move Directory
           run: cd tools\build\libwebrtc\
           shell: bash
