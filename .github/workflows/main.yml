@@ -7,8 +7,6 @@ jobs:
     runs-on: [windows-latest]
     steps:
       # use GitHub Actions
-        - name: Checkout
-          uses: actions/checkout@eanders/android
         - name: Move Directory
           run: cd tools/build/libwebrtc/
         - name: Config
