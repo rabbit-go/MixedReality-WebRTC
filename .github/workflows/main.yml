@@ -12,7 +12,13 @@ jobs:
           run: ls
           shell: bash
         - name: Move Directory
-          run: cd tools\build\libwebrtc\
+          run: cd tools
+          shell: bash
+        - name: Move Directory
+          run: cd build
+          shell: bash
+        - name: Move Directory
+          run: cd libwebrtc
           shell: bash
         - name: Config
           run: ./config.sh -d /mnt/d/build_webrtc -b branch-heads/71 -t android -c arm64
