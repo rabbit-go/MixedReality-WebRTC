@@ -12,12 +12,12 @@ jobs:
           run: ls
           shell: bash
         - name: Config
-          run: ./tools/build/libwebrtc/config.sh -d /mnt/d/build_webrtc -b branch-heads/71 -t android -c arm64
+          run:  sudo ./tools/build/libwebrtc/config.sh -d /mnt/d/build_webrtc -b branch-heads/71 -t android -c arm64
           shell: bash
         - name: CheckOut
-          run: ./tools/build/libwebrtc/checkout.sh 
+          run: sudo ./tools/build/libwebrtc/checkout.sh 
           shell: bash
         - name: Build
-          run: ./tools/build/libwebrtc/build.sh -c Release
+          run: sudo ./tools/build/libwebrtc/build.sh -c Release
           shell: bash
         
