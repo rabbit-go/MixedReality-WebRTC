@@ -8,7 +8,7 @@ jobs:
     steps:
       # use GitHub Actions
         - name: ls
-          run: ls
+          run: dir
         - name: Move Directory
           run: cd tools/build/libwebrtc/
         - name: Config
