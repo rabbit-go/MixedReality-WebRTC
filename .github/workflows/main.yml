@@ -11,20 +11,11 @@ jobs:
         - name: ls
           run: ls
           shell: bash
-        - name: Move Directory
-          run: cd tools
-          shell: bash
-        - name: Move Directory
-          run: cd build
-          shell: bash
-        - name: Move Directory
-          run: cd libwebrtc
-          shell: bash
         - name: Config
-          run: ./config.sh -d /mnt/d/build_webrtc -b branch-heads/71 -t android -c arm64
+          run: ./tools/build/libwebrtc/config.sh -d /mnt/d/build_webrtc -b branch-heads/71 -t android -c arm64
           shell: bash
         - name: CheckOut
-          run: ./checkout.sh 
+          run: ./tools/build/libwebrtc/checkout.sh 
         - name: Build
-          run: ./build.sh -c Release
+          run: ./tools/build/libwebrtc/build.sh -c Release
         
