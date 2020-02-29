@@ -10,14 +10,12 @@ jobs:
         - uses: actions/checkout@v2
         - name: ls
           run: ls
-          shell: bash
+        - name: cd
+          run: cd tools/build/libwebrtc
         - name: Config
-          run:  sudo ./tools/build/libwebrtc/config.sh -d /mnt/d/build_webrtc -b branch-heads/71 -t android -c arm64
-          shell: bash
+          run:  sudo ./config.sh -d /mnt/d/build_webrtc -b branch-heads/71 -t android -c arm64
         - name: CheckOut
-          run: sudo ./tools/build/libwebrtc/checkout.sh 
-          shell: bash
+          run: sudo ./checkout.sh 
         - name: Build
-          run: sudo ./tools/build/libwebrtc/build.sh -c Release
-          shell: bash
+          run: sudo ./build.sh -c Release
         
