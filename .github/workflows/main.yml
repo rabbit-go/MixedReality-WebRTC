@@ -1,0 +1,20 @@
+name: CI
+
+on: [push]
+
+jobs:
+  my_first_job:
+    runs-on: [windows-latest]
+    steps:
+      # use GitHub Actions
+        - name: Checkout
+          uses: actions/checkout@eanders/android
+        - name: Move Directory
+          run: cd tools/build/libwebrtc/
+        - name: Config
+          run: ./config.sh -d /mnt/d/build_webrtc -b branch-heads/71 -t android -c arm64
+        - name: CheckOut
+          run: ./checkout.sh 
+        - name: Build
+          run: ./build.sh -c Release
+        
