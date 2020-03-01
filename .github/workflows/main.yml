@@ -17,7 +17,7 @@ jobs:
         - name: Config
           run: cd tools/build/libwebrtc && chmod u+x config.sh && sudo ./config.sh -d /mnt/d/build_webrtc -b branch-heads/71 -t android -c arm64
         - name: CheckOut
-          run: cd tools/build/libwebrtc && sudo ./checkout.sh 
+          run: cd tools/build/libwebrtc && chmod u+x checkout.sh && sudo ./checkout.sh 
         - name: Build
-          run: cd tools/build/libwebrtc && sudo ./build.sh -c Release
+          run: cd tools/build/libwebrtc && chmod u+x build.sh && sudo ./build.sh -c Release
         
